@@ -66,9 +66,11 @@ export default function NavBar() {
             alt="Logo" 
             className="w-[40px] h-[40px] sm:w-[50px] sm:h-[50px] md:w-[60px] md:h-[60px] object-cover rounded-full ring-2 sm:ring-4 ring-primary-100 group-hover:ring-primary-300 transition-all duration-300" 
           />
-          <div>
-            <h1 className="text-base sm:text-lg md:text-xl font-bold text-gray-800">Fly Connects</h1>
-            <p className="text-[10px] sm:text-xs text-gray-500 hidden sm:block">Explore the World</p>
+          <div className="flex flex-col">
+            <h1 className="text-lg sm:text-xl md:text-2xl font-bold leading-tight">
+              <span className="text-red-600">Fly</span> <span className="text-gray-800">Connects</span>
+            </h1>
+            <p className="text-[10px] sm:text-xs text-gray-500 hidden sm:block leading-tight">Explore the World</p>
           </div>
         </Link>
 
