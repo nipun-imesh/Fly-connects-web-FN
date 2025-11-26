@@ -1,6 +1,9 @@
+import { useNavigate } from "react-router-dom";
 import heroPhoto from "../../assets/heroSectionPhoto.png";
 
 export default function Hero() {
+  const navigate = useNavigate();
+
   return (
     <div className="relative w-full inline-block overflow-hidden">
       {/* Gradient Overlay */}
@@ -19,10 +22,16 @@ export default function Hero() {
               Create memories that last a lifetime with flexible, personalized trips.
             </p>
             <div className="flex flex-wrap gap-3 sm:gap-4">
-              <button className="px-4 py-2 sm:px-6 sm:py-3 md:px-8 md:py-4 bg-cyan-500 text-white text-sm sm:text-base font-semibold rounded-lg hover:bg-cyan-600 transform hover:scale-105 transition duration-300 shadow-lg hover:shadow-primary-500/50">
+              <button 
+                onClick={() => navigate("/tours")}
+                className="px-4 py-2 sm:px-6 sm:py-3 md:px-8 md:py-4 bg-cyan-500 text-white text-sm sm:text-base font-semibold rounded-lg hover:bg-cyan-600 transform hover:scale-105 transition duration-300 shadow-lg hover:shadow-primary-500/50"
+              >
                 Explore Tours
               </button>
-              <button className="px-4 py-2 sm:px-6 sm:py-3 md:px-8 md:py-4 bg-white/20 backdrop-blur-md text-white text-sm sm:text-base font-semibold rounded-lg border-2 border-white/50 hover:bg-white/30 transform hover:scale-105 transition duration-300">
+              <button 
+                onClick={() => navigate("/about")}
+                className="px-4 py-2 sm:px-6 sm:py-3 md:px-8 md:py-4 bg-white/20 backdrop-blur-md text-white text-sm sm:text-base font-semibold rounded-lg border-2 border-white/50 hover:bg-white/30 transform hover:scale-105 transition duration-300"
+              >
                 Learn More
               </button>
             </div>
