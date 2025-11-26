@@ -4,12 +4,23 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
+    rollupOptions: {
+      output: {
+        manualChunks: undefined,
+      },
+    },
+  },
   server: {
-    // Enable client-side routing fallback in development
-    historyApiFallback: true,
+    port: 5173,
+    strictPort: false,
+    host: true,
   },
   preview: {
-    // Enable client-side routing fallback in preview mode
-    historyApiFallback: true,
+    port: 4173,
+    strictPort: false,
+    host: true,
   },
 })
