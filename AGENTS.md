@@ -1,0 +1,22 @@
+# Agent Guidelines for this repo
+
+- Dev/build: `npm run dev`, `npm run build`, `npm run preview` (Vite 7.x).
+- Lint: `npm run lint` (ESLint on all `*.ts`/`*.tsx`).
+- Tests: no test framework or commands configured; single-test runs are unavailable.
+- TypeScript: `typescript@~5.9.3`, strict mode enabled with `noUnusedLocals`, `noUnusedParameters`, `noFallthroughCasesInSwitch`; avoid `any`, prefer explicit return types and interface definitions.
+- React: version 19.1.1; use `jsx: "react-jsx"` transform (no default React import needed); functional components only with hooks.
+- Imports: React hooks without default import (`import { useState } from "react"`), then third‑party libs (react-router-dom, react-scroll, MUI), then local components/modules, then assets (images last).
+- Components: functional React components only; default exports (`export default function ComponentName()`); files in `src/components/ui/` and `src/pages/` use PascalCase names.
+- Props/state: define props/state with `interface`/`type`; never use untyped `props` or implicit `any` state.
+- Styling: Tailwind CSS 4.x utilities preferred with custom theme colors (primary/secondary/accent palettes defined in `tailwind.config.js`); MUI (`@mui/material`, `@emotion/react`, `@emotion/styled`) available for complex components but avoid CSS modules and inline style objects for layout.
+- Layout: use semantic HTML5 elements (`<main>`, `<section>`, `<nav>`, `<footer>`) and small focused components.
+- Lists: render with `.map()` using stable `key` values (IDs over indexes).
+- Routing/scroll: use `react-router-dom@7.x` (`BrowserRouter`, `Routes`, `Route`) for page routing and `react-scroll` for in‑page smooth scrolling.
+- Assets: import from `src/assets/` (e.g., `import heroPhoto from "../../assets/heroSectionPhoto.png"`); reserve `public/` for static files accessed by URL.
+- Error handling: validate inputs explicitly; wrap async side‑effects in `try/catch` and surface user‑friendly errors.
+- Formatting: follow existing Vite/React style—2‑space indent, double quotes in TS/TSX, trailing commas where valid, no semicolons at statement ends.
+- ESLint: config in `eslint.config.js` uses `@eslint/js`, `typescript-eslint@8.x`, `eslint-plugin-react-hooks`, `eslint-plugin-react-refresh` with Vite integration—keep new code lint‑clean.
+- TS config: `tsconfig.json` references `tsconfig.app.json` (strict app code) and `tsconfig.node.json` (Vite config); bundler moduleResolution with `verbatimModuleSyntax`.
+- File organization: UI components in `src/components/ui/`, route pages in `src/pages/`, shared styles in `src/App.css`/`src/index.css`.
+- Git: repo is version‑controlled; avoid adding new tooling/config files or changing lint/build pipelines unless explicitly requested.
+- Cursor/Copilot: no `.cursor/rules/`, `.cursorrules`, or `.github/copilot-instructions.md` currently exist; do not add or depend on them unless asked.
