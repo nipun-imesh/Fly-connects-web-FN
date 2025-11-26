@@ -264,25 +264,6 @@ export default function ContactPage() {
               />
             </div>
 
-            {/* FAQ Section */}
-            <div className="bg-gradient-to-br from-primary-600 to-primary-700 rounded-xl sm:rounded-2xl shadow-xl p-5 sm:p-6 md:p-8 text-white">
-              <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">Quick Answers</h3>
-              <div className="space-y-3 sm:space-y-4">
-                <div>
-                  <h4 className="text-sm sm:text-base font-semibold mb-1">How quickly will I get a response?</h4>
-                  <p className="text-xs sm:text-sm text-primary-100">We typically respond within 24 hours on business days.</p>
-                </div>
-                <div>
-                  <h4 className="text-sm sm:text-base font-semibold mb-1">Can I call directly?</h4>
-                  <p className="text-xs sm:text-sm text-primary-100">Absolutely! We're available Mon-Fri, 9AM-6PM.</p>
-                </div>
-                <div>
-                  <h4 className="text-sm sm:text-base font-semibold mb-1">Do you offer group discounts?</h4>
-                  <p className="text-xs sm:text-sm text-primary-100">Yes! Contact us for groups of 5 or more.</p>
-                </div>
-              </div>
-            </div>
-
             {/* Social Links */}
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-5 sm:p-6 md:p-8">
               <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">Follow Us</h3>
