@@ -67,10 +67,14 @@ export default function NavBar() {
             className="w-[40px] h-[40px] sm:w-[50px] sm:h-[50px] md:w-[60px] md:h-[60px] object-cover rounded-full ring-2 sm:ring-4 ring-primary-100 group-hover:ring-primary-300 transition-all duration-300" 
           />
           <div className="flex flex-col">
-            <h1 className="text-lg sm:text-xl md:text-2xl font-bold leading-tight">
-              <span className="text-red-600">Fly</span> <span className="text-gray-800">Connects</span>
+            <h1 className="text-lg sm:text-xl md:text-2xl font-extrabold leading-tight tracking-tight">
+              <span className="bg-gradient-to-r from-red-600 via-red-500 to-orange-500 bg-clip-text text-transparent drop-shadow-sm">Fly</span>
+              <span className="text-gray-800 ml-1 font-bold relative">
+                Connects
+                <span className="absolute -bottom-0.5 left-0 w-full h-0.5 bg-gradient-to-r from-red-500 to-orange-400"></span>
+              </span>
             </h1>
-            <p className="text-[10px] sm:text-xs text-gray-500 hidden sm:block leading-tight">Explore the World</p>
+            <p className="text-[10px] sm:text-xs text-gray-500 hidden sm:block leading-tight mt-0.5">Explore the World</p>
           </div>
         </Link>
 
