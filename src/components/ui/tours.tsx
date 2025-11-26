@@ -15,12 +15,7 @@ interface Tour {
 
 type DifficultyFilter = "All" | "Easy" | "Moderate" | "Challenging";
 
-export default function Tours() {
-  const [hoveredId, setHoveredId] = useState<number | null>(null);
-  const [searchTerm, setSearchTerm] = useState<string>("");
-  const [difficultyFilter, setDifficultyFilter] = useState<DifficultyFilter>("All");
-
-  const tours: Tour[] = [
+const TOURS_DATA: Tour[] = [
     {
       id: 1,
       title: "Mountain Paradise",
@@ -68,35 +63,16 @@ export default function Tours() {
       rating: 4.9,
       reviews: 567,
       difficulty: "Challenging"
-    },
-    {
-      id: 5,
-      title: "Northern Lights",
-      location: "Iceland",
-      price: "$3,499",
-      duration: "8 Days",
-      description: "Witness the magical Aurora Borealis and explore Iceland's dramatic landscapes.",
-      image: "https://images.unsplash.com/photo-1483347756197-71ef80e95f73?w=800&q=80",
-      rating: 5.0,
-      reviews: 328,
-      difficulty: "Moderate"
-    },
-    {
-      id: 6,
-      title: "Safari Experience",
-      location: "Serengeti, Tanzania",
-      price: "$4,299",
-      duration: "10 Days",
-      description: "Embark on an unforgettable wildlife safari through Africa's most iconic landscapes.",
-      image: "https://images.unsplash.com/photo-1516426122078-c23e76319801?w=800&q=80",
-      rating: 4.9,
-      reviews: 445,
-      difficulty: "Moderate"
     }
-  ];
+];
+
+export default function Tours() {
+  const [hoveredId, setHoveredId] = useState<number | null>(null);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [difficultyFilter, setDifficultyFilter] = useState<DifficultyFilter>("All");
 
   const filteredTours = useMemo(() => {
-    return tours.filter((tour) => {
+    return TOURS_DATA.filter((tour) => {
       const matchesSearch =
         searchTerm.trim().length === 0 ||
         tour.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -107,7 +83,7 @@ export default function Tours() {
 
       return matchesSearch && matchesDifficulty;
     });
-  }, [difficultyFilter, searchTerm, tours]);
+  }, [difficultyFilter, searchTerm]);
 
   const getDifficultyColor = (difficulty: string): string => {
 

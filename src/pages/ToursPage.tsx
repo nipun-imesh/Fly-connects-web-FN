@@ -17,7 +17,6 @@ interface Tour {
 export default function ToursPage() {
   const [selectedTour, setSelectedTour] = useState<Tour | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
-
   const tours: Tour[] = [
     {
       id: 1,
@@ -298,7 +297,7 @@ export default function ToursPage() {
             onClick={closeModal}
           >
             <div 
-              className="relative bg-white rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-4xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto"
+              className="relative bg-white rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-4xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Close Button */}
