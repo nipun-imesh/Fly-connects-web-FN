@@ -1,41 +1,67 @@
-import { useState } from "react";
-import { TOURS_DATA, type Tour } from "../../data/toursData";
+import { useState, useEffect } from "react"
+import { getAllTours } from "../../services/tourService"
+import type { Tour } from "../../services/tourService"
 
 export default function ToursGrid() {
-  const [selectedTour, setSelectedTour] = useState<Tour | null>(null);
-  const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
+  const [tours, setTours] = useState<Tour[]>([])
+  const [loading, setLoading] = useState<boolean>(true)
+  const [selectedTour, setSelectedTour] = useState<Tour | null>(null)
+  const [currentImageIndex, setCurrentImageIndex] = useState<number>(0)
+
+  useEffect(() => {
+    const fetchTours = (): void => {
+      try {
+        const data = getAllTours()
+        setTours(data)
+      } catch (error) {
+        console.error("Error fetching tours:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchTours()
+  }, [])
 
   const openModal = (tour: Tour): void => {
-    setSelectedTour(tour);
-    setCurrentImageIndex(0);
-    document.body.style.overflow = "hidden";
-  };
+    setSelectedTour(tour)
+    setCurrentImageIndex(0)
+    document.body.style.overflow = "hidden"
+  }
 
   const closeModal = (): void => {
-    setSelectedTour(null);
-    setCurrentImageIndex(0);
-    document.body.style.overflow = "unset";
-  };
+    setSelectedTour(null)
+    setCurrentImageIndex(0)
+    document.body.style.overflow = "unset"
+  }
 
   const nextImage = (): void => {
     if (selectedTour) {
-      setCurrentImageIndex((prev) => (prev + 1) % selectedTour.images.length);
+      setCurrentImageIndex((prev) => (prev + 1) % selectedTour.images.length)
     }
-  };
+  }
 
   const prevImage = (): void => {
     if (selectedTour) {
       setCurrentImageIndex((prev) => 
         prev === 0 ? selectedTour.images.length - 1 : prev - 1
-      );
+      )
     }
-  };
+  }
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary-600"></div>
+      </div>
+    )
+  }
 
   return (
     <>
       {/* Tours Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-        {TOURS_DATA.map((tour, index) => (
+        {tours.map((tour, index) => (
           <div
             key={tour.id}
             className="group relative bg-white rounded-xl sm:rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 cursor-pointer"
