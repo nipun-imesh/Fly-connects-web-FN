@@ -1,46 +1,17 @@
-import { useState, useRef, useEffect } from "react";
-
-interface Service {
-  id: number;
-  title: string;
-  description: string;
-  image: string;
-  icon: string;
-  color: string;
-}
+import { useState, useRef, useEffect } from "react"
+import { getAllServices } from "../../services/serviceData"
+import type { Service } from "../../services/serviceData"
 
 export default function DataCard() {
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  const [selectedService, setSelectedService] = useState<Service | null>(null);
-  const [truncatedStates, setTruncatedStates] = useState<boolean[]>([]);
-  const descriptionRefs = useRef<(HTMLParagraphElement | null)[]>([]);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
+  const [selectedService, setSelectedService] = useState<Service | null>(null)
+  const [truncatedStates, setTruncatedStates] = useState<boolean[]>([])
+  const [services, setServices] = useState<Service[]>([])
+  const descriptionRefs = useRef<(HTMLParagraphElement | null)[]>([])
 
-  const services: Service[] = [
-    {
-      id: 1,
-      title: "Guided Tours",
-      description: "Expert guides bring destinations to life with rich stories and local insights jkj jjkjhjk jkhkjhjkh jkhhjhjk hjkhjkh khkjjhk bhkbnb jbhj gjh jkhkj hkj hk hk hjkhjkh jkbhb kb kjbkjbkjbkj jkbjkbkj bkbjkbabnshdbhh hiuhhbsahdb hbhbas hbkhbashdh bhjbhkbashjdb bbbmzsbd bbasfddb hjsbajkbjkdb jabjsbdjkasjbnj basjbdjkj basb.",
-      image: "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=600&q=80",
-      icon: "🗺️",
-      color: "from-cyan-500 to-blue-600"
-    },
-    {
-      id: 2,
-      title: "Luxury Stays",
-      description: "Hand-picked premium accommodations for ultimate comfort and relaxation.",
-      image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&q=80",
-      icon: "🏨",
-      color: "from-cyan-500 to-blue-600"
-    },
-    {
-      id: 3,
-      title: "Adventure Sports",
-      description: "Thrilling activities for adrenaline seekers and adventure enthusiasts.",
-      image: "https://images.unsplash.com/photo-1551632811-561732d1e306?w=600&q=80",
-      icon: "⛷️",
-      color: "from-cyan-500 to-blue-600"
-    }
-  ];
+  useEffect(() => {
+    setServices(getAllServices())
+  }, [])
 
   useEffect(() => {
     const newTruncatedStates = descriptionRefs.current.map((ref) => {
@@ -55,8 +26,8 @@ export default function DataCard() {
   };
 
   const closeModal = (): void => {
-    setSelectedService(null);
-  };
+    setSelectedService(null)
+  }
 
   return (
     <div className="py-12 sm:py-16 md:py-20 bg-gradient-to-b from-gray-50 to-white">

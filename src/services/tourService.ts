@@ -206,3 +206,29 @@ export const getToursByCategory = (category: string): Tour[] => {
 export const getAllTours = (): Tour[] => {
   return TOURS_DATA
 }
+
+export const addTour = (tour: Omit<Tour, "id">): Tour => {
+  const newTour = {
+    ...tour,
+    id: Math.max(...TOURS_DATA.map(t => t.id), 0) + 1
+  }
+  TOURS_DATA.push(newTour)
+  return newTour
+}
+
+export const updateTour = (id: number, tour: Partial<Tour>): Tour | undefined => {
+  const index = TOURS_DATA.findIndex(t => t.id === id)
+  if (index === -1) return undefined
+  
+  TOURS_DATA[index] = { ...TOURS_DATA[index], ...tour }
+  return TOURS_DATA[index]
+}
+
+export const deleteTour = (id: number): boolean => {
+  const initialLength = TOURS_DATA.length
+  const index = TOURS_DATA.findIndex(t => t.id === id)
+  if (index !== -1) {
+    TOURS_DATA.splice(index, 1)
+  }
+  return TOURS_DATA.length < initialLength
+}

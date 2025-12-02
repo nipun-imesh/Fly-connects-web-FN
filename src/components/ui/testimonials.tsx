@@ -157,8 +157,7 @@ export default function Testimonials() {
               </svg>
             </button>
           </div>
-        </div>
-
+        </div>q
       </div>
     </div>
   );
