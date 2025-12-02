@@ -6,6 +6,7 @@ export default function AdminToursPage() {
   const [tours, setTours] = useState<Tour[]>([])
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingTour, setEditingTour] = useState<Tour | null>(null)
+  const [imagePreviews, setImagePreviews] = useState<string[]>(["", "", "", ""])
   const [formData, setFormData] = useState<Omit<Tour, "id">>({
     title: "",
     location: "",
@@ -54,6 +55,7 @@ export default function AdminToursPage() {
       difficulty: tour.difficulty,
       category: tour.category
     })
+    setImagePreviews(tour.images)
     setIsModalOpen(true)
   }
 
@@ -71,6 +73,7 @@ export default function AdminToursPage() {
   const closeModal = (): void => {
     setIsModalOpen(false)
     setEditingTour(null)
+    setImagePreviews(["", "", "", ""])
     setFormData({
       title: "",
       location: "",
@@ -91,7 +94,10 @@ export default function AdminToursPage() {
       const index = parseInt(name.split("-")[1])
       const newImages = [...formData.images]
       newImages[index] = value
+      const newPreviews = [...imagePreviews]
+      newPreviews[index] = value
       setFormData({ ...formData, images: newImages })
+      setImagePreviews(newPreviews)
     } else if (name === "price" || name === "rating" || name === "reviews") {
       setFormData({ ...formData, [name]: Number(value) })
     } else {
@@ -99,14 +105,37 @@ export default function AdminToursPage() {
     }
   }
 
+  const handleImageFile = (e: React.ChangeEvent<HTMLInputElement>, index: number): void => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        const result = reader.result as string
+        const newImages = [...formData.images]
+        newImages[index] = result
+        const newPreviews = [...imagePreviews]
+        newPreviews[index] = result
+        setFormData({ ...formData, images: newImages })
+        setImagePreviews(newPreviews)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-800">Tours Management</h1>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-800">Tours Management</h1>
+          <p className="text-gray-600 mt-1">Manage your tour packages and destinations</p>
+        </div>
         <button
           onClick={openModal}
-          className="px-6 py-3 bg-primary-600 text-white font-semibold rounded-lg hover:bg-primary-700 transition"
+          className="px-6 py-3 bg-gradient-to-r from-red-600 to-orange-500 text-white font-bold rounded-xl hover:from-red-700 hover:to-orange-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98] flex items-center gap-2"
         >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+          </svg>
           Add New Tour
         </button>
       </div>
@@ -206,7 +235,7 @@ export default function AdminToursPage() {
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto p-8 relative">
+          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[85vh] overflow-y-auto p-8 relative scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
             <button
               onClick={closeModal}
               className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 hover:text-gray-900 flex items-center justify-center transition-all duration-300"
@@ -349,19 +378,54 @@ export default function AdminToursPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Images (4 URLs)</label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <label className="block text-sm font-semibold text-gray-700 mb-3">Tour Images (4 Required)</label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {[0, 1, 2, 3].map((idx) => (
-                    <input
-                      key={idx}
-                      type="url"
-                      name={`image-${idx}`}
-                      value={formData.images[idx]}
-                      onChange={handleChange}
-                      required
-                      placeholder={`Image ${idx + 1} URL`}
-                      className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-primary-500 focus:outline-none"
-                    />
+                    <div key={idx} className="space-y-3">
+                      <h4 className="text-sm font-semibold text-gray-600">Image {idx + 1}</h4>
+                      
+                      {/* Image Preview */}
+                      {imagePreviews[idx] && (
+                        <div className="relative group">
+                          <img 
+                            src={imagePreviews[idx]} 
+                            alt={`Preview ${idx + 1}`} 
+                            className="w-full h-32 object-cover rounded-lg border-2 border-gray-200"
+                          />
+                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                            <span className="text-white text-xs font-semibold">Preview {idx + 1}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Upload File */}
+                      <label className="w-full px-3 py-2 border-2 border-dashed border-gray-300 rounded-lg hover:border-red-500 transition-all cursor-pointer flex flex-col items-center justify-center gap-1 bg-gray-50 hover:bg-gray-100">
+                        <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                        <span className="text-xs text-gray-600 font-medium">Upload Image</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleImageFile(e, idx)}
+                          className="hidden"
+                        />
+                      </label>
+
+                      {/* URL Input */}
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Or Enter URL</label>
+                        <input
+                          type="url"
+                          name={`image-${idx}`}
+                          value={formData.images[idx]}
+                          onChange={handleChange}
+                          required
+                          placeholder="https://example.com/image.jpg"
+                          className="w-full px-3 py-2 text-sm rounded-lg border-2 border-gray-200 focus:border-red-500 focus:ring-2 focus:ring-red-200 focus:outline-none transition-all"
+                        />
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -376,7 +440,7 @@ export default function AdminToursPage() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-6 py-3 bg-primary-600 text-white font-semibold rounded-lg hover:bg-primary-700 transition"
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-red-600 to-orange-500 text-white font-bold rounded-lg hover:from-red-700 hover:to-orange-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98]"
                 >
                   {editingTour ? "Update" : "Add"} Tour
                 </button>
