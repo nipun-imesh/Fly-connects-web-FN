@@ -7,6 +7,8 @@ export default function AdminOffersPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingService, setEditingService] = useState<Service | null>(null)
   const [imagePreview, setImagePreview] = useState<string>("")
+  const [showAlert, setShowAlert] = useState(false)
+  const [alertConfig, setAlertConfig] = useState({ title: "", message: "", type: "success" as "success" | "error" | "confirm", onConfirm: (() => {}) as () => void })
   const [formData, setFormData] = useState<Omit<Service, "id">>({
     title: "",
     description: "",
@@ -50,10 +52,24 @@ export default function AdminOffersPage() {
   }
 
   const handleDelete = (id: number): void => {
-    if (confirm("Are you sure you want to delete this service?")) {
-      deleteService(id)
-      loadServices()
-    }
+    setAlertConfig({
+      title: "Delete Service",
+      message: "Are you sure you want to delete this service? This action cannot be undone.",
+      type: "confirm",
+      onConfirm: () => {
+        deleteService(id)
+        loadServices()
+        setShowAlert(false)
+        setAlertConfig({
+          title: "Success",
+          message: "Service deleted successfully!",
+          type: "success",
+          onConfirm: () => setShowAlert(false)
+        })
+        setShowAlert(true)
+      }
+    })
+    setShowAlert(true)
   }
 
   const openModal = (): void => {
@@ -277,6 +293,83 @@ export default function AdminOffersPage() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Custom Alert Modal */}
+      {showAlert && (
+        <>
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 animate-fade-in"
+            onClick={() => alertConfig.type !== "confirm" && setShowAlert(false)}
+          />
+          
+          {/* Alert Box */}
+          <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 animate-scale-in">
+            <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-[90vw] border-2 border-red-500">
+              {/* Icon */}
+              <div className="flex justify-center mb-4">
+                <div className={`w-16 h-16 rounded-full flex items-center justify-center ${
+                  alertConfig.type === "success" ? "bg-gradient-to-br from-green-500 to-green-600" :
+                  alertConfig.type === "error" ? "bg-gradient-to-br from-red-500 to-orange-500" :
+                  "bg-gradient-to-br from-yellow-500 to-orange-500"
+                }`}>
+                  {alertConfig.type === "success" ? (
+                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  ) : alertConfig.type === "error" ? (
+                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  ) : (
+                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                  )}
+                </div>
+              </div>
+              
+              {/* Title */}
+              <h3 className="text-xl font-bold text-gray-800 text-center mb-2">
+                {alertConfig.title}
+              </h3>
+              
+              {/* Message */}
+              <p className="text-gray-600 text-center mb-6">
+                {alertConfig.message}
+              </p>
+              
+              {/* Buttons */}
+              {alertConfig.type === "confirm" ? (
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowAlert(false)}
+                    className="flex-1 px-4 py-3 bg-gray-200 text-gray-800 font-semibold rounded-xl hover:bg-gray-300 transition-all duration-300"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={alertConfig.onConfirm}
+                    className="flex-1 px-4 py-3 bg-gradient-to-r from-red-600 to-orange-500 text-white font-bold rounded-xl hover:from-red-700 hover:to-orange-600 transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-lg"
+                  >
+                    Confirm
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => {
+                    alertConfig.onConfirm()
+                    setShowAlert(false)
+                  }}
+                  className="w-full px-6 py-3 bg-gradient-to-r from-red-600 to-orange-500 text-white font-bold rounded-xl hover:from-red-700 hover:to-orange-600 transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-lg"
+                >
+                  OK
+                </button>
+              )}
+            </div>
+          </div>
+        </>
       )}
     </div>
   )

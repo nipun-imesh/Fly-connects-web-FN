@@ -7,6 +7,8 @@ export default function AdminToursPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingTour, setEditingTour] = useState<Tour | null>(null)
   const [imagePreviews, setImagePreviews] = useState<string[]>(["", "", "", ""])
+  const [showAlert, setShowAlert] = useState(false)
+  const [alertConfig, setAlertConfig] = useState({ title: "", message: "", type: "success" as "success" | "error" | "confirm", onConfirm: (() => {}) as () => void })
   const [formData, setFormData] = useState<Omit<Tour, "id">>({
     title: "",
     location: "",
@@ -60,10 +62,24 @@ export default function AdminToursPage() {
   }
 
   const handleDelete = (id: number): void => {
-    if (confirm("Are you sure you want to delete this tour?")) {
-      deleteTour(id)
-      loadTours()
-    }
+    setAlertConfig({
+      title: "Delete Tour",
+      message: "Are you sure you want to delete this tour? This action cannot be undone.",
+      type: "confirm",
+      onConfirm: () => {
+        deleteTour(id)
+        loadTours()
+        setShowAlert(false)
+        setAlertConfig({
+          title: "Success",
+          message: "Tour deleted successfully!",
+          type: "success",
+          onConfirm: () => setShowAlert(false)
+        })
+        setShowAlert(true)
+      }
+    })
+    setShowAlert(true)
   }
 
   const openModal = (): void => {
@@ -446,6 +462,75 @@ export default function AdminToursPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Alert Modal */}
+      {showAlert && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-8 relative shadow-2xl animate-fadeIn">
+            {/* Icon */}
+            <div className="flex justify-center mb-4">
+              {alertConfig.type === "success" && (
+                <div className="w-16 h-16 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-center">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              )}
+              {alertConfig.type === "error" && (
+                <div className="w-16 h-16 rounded-full bg-gradient-to-r from-red-600 to-orange-500 flex items-center justify-center">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </div>
+              )}
+              {alertConfig.type === "confirm" && (
+                <div className="w-16 h-16 rounded-full bg-gradient-to-r from-yellow-500 to-orange-500 flex items-center justify-center">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+              )}
+            </div>
+
+            {/* Title */}
+            <h3 className="text-2xl font-bold text-gray-800 text-center mb-3">
+              {alertConfig.title}
+            </h3>
+
+            {/* Message */}
+            <p className="text-gray-600 text-center mb-6">
+              {alertConfig.message}
+            </p>
+
+            {/* Buttons */}
+            <div className="flex gap-3">
+              {alertConfig.type === "confirm" ? (
+                <>
+                  <button
+                    onClick={() => setShowAlert(false)}
+                    className="flex-1 px-6 py-3 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={alertConfig.onConfirm}
+                    className="flex-1 px-6 py-3 bg-gradient-to-r from-red-600 to-orange-500 text-white font-bold rounded-lg hover:from-red-700 hover:to-orange-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    Confirm
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => setShowAlert(false)}
+                  className="w-full px-6 py-3 bg-gradient-to-r from-red-600 to-orange-500 text-white font-bold rounded-lg hover:from-red-700 hover:to-orange-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  OK
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}
