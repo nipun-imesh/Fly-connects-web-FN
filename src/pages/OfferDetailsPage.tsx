@@ -2,6 +2,8 @@ import { useMemo, useState } from "react"
 import type { ChangeEvent, FormEvent } from "react"
 import { Link, useParams } from "react-router-dom"
 import emailjs from "@emailjs/browser"
+import Loader from "../components/ui/Loader"
+import usePreloadImages from "../hooks/usePreloadImages"
 import { getServiceById } from "../services/serviceData"
 
 interface EnquiryFormData {
@@ -45,6 +47,9 @@ export default function OfferDetailsPage() {
     if (!Number.isFinite(offerId)) return undefined
     return getServiceById(offerId)
   }, [offerId])
+
+  const offerImages = useMemo(() => (offer?.image ? [offer.image] : []), [offer])
+  const { isReady: areImagesReady } = usePreloadImages(offerImages)
 
   const [formData, setFormData] = useState<EnquiryFormData>({
     name: "",
@@ -206,6 +211,10 @@ export default function OfferDetailsPage() {
         </div>
       </div>
     )
+  }
+
+  if (!areImagesReady) {
+    return <Loader label="Loading offer image..." />
   }
 
   return (

@@ -2,6 +2,8 @@ import { useMemo, useState } from "react"
 import type { ChangeEvent, FormEvent } from "react"
 import { Link, useParams } from "react-router-dom"
 import emailjs from "@emailjs/browser"
+import Loader from "../components/ui/Loader"
+import usePreloadImages from "../hooks/usePreloadImages"
 import { getTourById } from "../services/tourService"
 
 interface EnquiryFormData {
@@ -45,6 +47,9 @@ export default function TourDetailsPage() {
     if (!Number.isFinite(tourId)) return undefined
     return getTourById(tourId)
   }, [tourId])
+
+  const tourImages = useMemo(() => tour?.images ?? [], [tour])
+  const { isReady: areImagesReady } = usePreloadImages(tourImages)
 
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0)
 
@@ -216,6 +221,10 @@ export default function TourDetailsPage() {
         </div>
       </div>
     )
+  }
+
+  if (!areImagesReady) {
+    return <Loader label="Loading tour images..." />
   }
 
   return (
