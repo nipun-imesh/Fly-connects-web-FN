@@ -1,8 +1,17 @@
-import { useNavigate } from "react-router-dom";
-import heroPhoto from "../../assets/heroSectionPhoto.png";
+import { useState } from "react"
+import { useNavigate } from "react-router-dom"
+import heroPhoto from "../../assets/heroSectionPhoto.png"
 
 export default function Hero() {
-  const navigate = useNavigate();
+  const navigate = useNavigate()
+
+  const [disableHeroAnimation] = useState<boolean>(() => {
+    try {
+      return window.sessionStorage.getItem("heroImageLoaded") === "1"
+    } catch {
+      return false
+    }
+  })
 
   return (
     <div className="relative w-full inline-block overflow-hidden">
@@ -41,10 +50,22 @@ export default function Hero() {
 
       {/* Hero Image with Animation */}
       <img
-        className="w-full h-[400px] sm:h-[500px] md:h-[600px] lg:h-[750px] object-cover animate-ken-burns"
+        className={`w-full h-[400px] sm:h-[500px] md:h-[600px] lg:h-[750px] object-cover ${
+          disableHeroAnimation ? "" : "animate-ken-burns"
+        }`}
         src={heroPhoto}
         alt="Travel Adventure"
+        loading="eager"
+        fetchPriority="high"
+        decoding="async"
+        onLoad={() => {
+          try {
+            window.sessionStorage.setItem("heroImageLoaded", "1")
+          } catch {
+            // ignore
+          }
+        }}
       />
     </div>
-  );
+  )
 }
