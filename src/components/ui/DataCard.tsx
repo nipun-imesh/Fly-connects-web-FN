@@ -1,25 +1,14 @@
-import { useState, useRef, useEffect } from "react"
+import { useState, useEffect } from "react"
 import { getAllServices } from "../../services/serviceData"
 import type { Service } from "../../services/serviceData"
 
 export default function DataCard() {
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
   const [selectedService, setSelectedService] = useState<Service | null>(null)
-  const [truncatedStates, setTruncatedStates] = useState<boolean[]>([])
   const [services, setServices] = useState<Service[]>([])
-  const descriptionRefs = useRef<(HTMLParagraphElement | null)[]>([])
 
   useEffect(() => {
     setServices(getAllServices())
   }, [])
-
-  useEffect(() => {
-    const newTruncatedStates = descriptionRefs.current.map((ref) => {
-      if (!ref) return false;
-      return ref.scrollHeight > ref.clientHeight;
-    });
-    setTruncatedStates(newTruncatedStates);
-  }, []);
 
   const handleCardClick = (service: Service): void => {
     setSelectedService(service);
@@ -34,110 +23,61 @@ export default function DataCard() {
       <div className="max-w-7xl mx-auto px-4 sm:px-5">
         <div className="text-center mb-10 sm:mb-12 md:mb-16 animate-fade-in-up">
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-800 mb-3 sm:mb-4">
-            What We <span className="text-cyan-500">Offer</span>
+            What We <span className="text-red-600">Offer</span>
           </h2>
           <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto px-4">
             From thrilling adventures to peaceful retreats, we provide comprehensive travel services tailored to your dreams
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-          {services.map((service, index) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8">
+          {services.map((service) => (
             <div
               key={service.id}
-              className={`group relative rounded-xl overflow-hidden transition-all duration-700 transform hover:scale-105 cursor-pointer ${
-                hoveredIndex === index ? "bg-white shadow-2xl shadow-blue-500/50" : "bg-white shadow-xl hover:shadow-2xl"
-              }`}
-              onMouseEnter={() => setHoveredIndex(index)}
-              onMouseLeave={() => setHoveredIndex(null)}
+              className="group relative rounded-xl overflow-hidden bg-white shadow-xl cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
               onClick={() => handleCardClick(service)}
             >
-              {/* Border Effect */}
-              <div className={`absolute inset-0 rounded-xl transition-all duration-500 ${
-                hoveredIndex === index ? "opacity-100" : "opacity-0"
-              }`}>
-                <div className="absolute inset-0 rounded-xl border-2 border-blue-500 animate-pulse"></div>
-              </div>
-              
-              {/* Subtle Border Before Hover */}
-              <div className={`absolute inset-0 rounded-xl border-2 transition-all duration-500 ${
-                hoveredIndex === index ? "opacity-0 border-transparent" : "opacity-100 border-cyan-500"
-              }`}></div>
+              <div className="absolute inset-0 rounded-xl border-2 border-red-600 transition-colors duration-300 group-hover:border-red-700"></div>
 
               {/* Image Section */}
-              <div className="relative h-48 sm:h-56 md:h-64 overflow-hidden">
+              <div className="relative h-40 sm:h-44 md:h-48 overflow-hidden">
                 <img
-                  className={`w-full h-full object-cover transition-all duration-700 ${
-                    hoveredIndex === index ? "scale-125 grayscale" : "scale-100 grayscale-0"
-                  }`}
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                   src={service.image}
                   alt={service.title}
                 />
                 
                 {/* Gradient Overlay */}
-                <div className={`absolute inset-0 transition-all duration-500 ${
-                  hoveredIndex === index ? "bg-gradient-to-br from-blue-500/40 via-cyan-500/40 to-blue-600/40" : "bg-gradient-to-br from-cyan-500/30 via-blue-500/30 to-blue-600/30"
-                }`}></div>
+                <div className="absolute inset-0 bg-gradient-to-br from-red-600/25 via-black/20 to-black/35"></div>
 
-                {/* Animated Blue Lines */}
-                <div className={`absolute inset-0 transition-opacity duration-500 ${
-                  hoveredIndex === index ? "opacity-100" : "opacity-0"
-                }`}>
-                  <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-blue-400 to-transparent animate-pulse"></div>
-                  <div className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-blue-400 to-transparent animate-pulse"></div>
-                  <div className="absolute top-0 left-0 w-0.5 h-full bg-gradient-to-b from-transparent via-blue-400 to-transparent animate-pulse"></div>
-                  <div className="absolute top-0 right-0 w-0.5 h-full bg-gradient-to-b from-transparent via-blue-400 to-transparent animate-pulse"></div>
+                {/* Title Overlay */}
+                <div className="absolute top-3 left-3 right-3">
+                  <div className="inline-flex max-w-full rounded-lg bg-black/55 px-3 py-2 backdrop-blur-sm">
+                    <span className="truncate text-sm sm:text-base font-bold text-white">
+                      {service.title}
+                    </span>
+                  </div>
                 </div>
-
-                {/* Corner Accents */}
-                <div className={`absolute top-3 right-3 w-6 h-6 border-t-2 border-r-2 border-blue-400 transition-all duration-500 ${
-                  hoveredIndex === index ? "opacity-100 scale-100" : "opacity-0 scale-50"
-                }`}></div>
-                <div className={`absolute bottom-3 left-3 w-6 h-6 border-b-2 border-l-2 border-blue-400 transition-all duration-500 ${
-                  hoveredIndex === index ? "opacity-100 scale-100" : "opacity-0 scale-50"
-                }`}></div>
               </div>
 
               {/* Content Section */}
-              <div className={`p-4 sm:p-5 md:p-6 transition-all duration-500 ${
-                hoveredIndex === index ? "bg-gradient-to-br from-blue-50 to-cyan-50" : "bg-white"
-              }`}>
+              <div className="p-4 sm:p-5 md:p-6 bg-white">
                 {/* Top Line Accent */}
-                <div className={`h-1 mb-3 sm:mb-4 rounded-full transition-all duration-500 ${
-                  hoveredIndex === index ? "bg-blue-500 w-full" : "bg-gradient-to-r from-cyan-500 to-blue-600 w-12 sm:w-16"
-                }`}></div>
+                <div className="h-1 mb-3 sm:mb-4 rounded-full bg-gradient-to-r from-red-600 to-black w-12 sm:w-16"></div>
 
-                {/* Title */}
-                <h3 className={`text-xl sm:text-2xl font-bold mb-2 sm:mb-3 transition-all duration-500 ${
-                  hoveredIndex === index ? "text-blue-600" : "text-gray-800"
-                }`}>
-                  {service.title}
-                </h3>
-
-                {/* Description */}
-                <div className="relative">
-                  <p 
-                    ref={(el) => {
-                      descriptionRefs.current[index] = el;
-                    }}
-                    className={`text-sm sm:text-base leading-relaxed transition-all duration-500 line-clamp-2 ${
-                      hoveredIndex === index ? "text-gray-700" : "text-gray-600"
-                    }`}
-                  >
-                    {service.description}
-                  </p>
-                  {truncatedStates[index] && (
-                    <span className="text-sm sm:text-base text-blue-600 font-semibold hover:text-blue-700 transition-colors cursor-pointer">
-                      See more...
-                    </span>
-                  )}
-                </div>
+                {service.details && service.details.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-bold text-gray-900 mb-2">
+                      Package Inclusions
+                    </h4>
+                    <ul className="list-disc pl-5 space-y-1 text-sm text-gray-700">
+                      {service.details.slice(0, 3).map((detail) => (
+                        <li key={detail}>{detail}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
-
-              {/* Bottom Blue Strip */}
-              <div className={`h-1 bg-blue-500 transition-all duration-500 ${
-                hoveredIndex === index ? "opacity-100" : "opacity-0"
-              }`}></div>
             </div>
           ))}
         </div>
@@ -150,7 +90,7 @@ export default function DataCard() {
           onClick={closeModal}
         >
           <div 
-            className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-slide-in-up relative"
+            className="bg-white rounded-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-slide-in-up relative"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close Button (X) */}
@@ -172,26 +112,39 @@ export default function DataCard() {
             </button>
 
             {/* Modal Header with Image */}
-            <div className="relative h-64 overflow-hidden rounded-t-2xl">
+            <div className="relative h-40 sm:h-48 md:h-56 overflow-hidden rounded-t-2xl">
               <img 
                 src={selectedService.image} 
                 alt={selectedService.title}
                 className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/40 via-blue-500/40 to-blue-600/40"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-red-600/35 via-black/25 to-black/40"></div>
             </div>
 
             {/* Modal Content */}
-            <div className="p-6">
-              <div className="h-1 w-20 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full mb-4"></div>
+            <div className="p-6 sm:p-8">
+              <div className="h-1 w-20 bg-gradient-to-r from-red-600 to-black rounded-full mb-4"></div>
               
               <h2 className="text-3xl font-bold text-gray-800 mb-4">
                 {selectedService.title}
               </h2>
-              
-              <p className="text-base text-gray-700 leading-relaxed">
-                {selectedService.description}
-              </p>
+
+              <div className="space-y-6">
+                <p className="text-base sm:text-lg text-gray-700 leading-relaxed">
+                  {selectedService.description}
+                </p>
+
+                {selectedService.details && selectedService.details.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-3">Package Inclusions</h3>
+                    <ul className="list-disc pl-5 space-y-2 text-base text-gray-700">
+                      {selectedService.details.map((detail) => (
+                        <li key={detail}>{detail}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

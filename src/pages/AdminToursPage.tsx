@@ -16,10 +16,12 @@ export default function AdminToursPage() {
     duration: "",
     description: "",
     images: ["", "", "", ""],
+    inclusions: [],
     rating: 5,
     reviews: 0,
     difficulty: "Easy",
-    category: "Adventure"
+    category: "Adventure",
+    tourType: "Outbound"
   })
 
   useEffect(() => {
@@ -52,10 +54,12 @@ export default function AdminToursPage() {
       duration: tour.duration,
       description: tour.description,
       images: tour.images,
+      inclusions: tour.inclusions,
       rating: tour.rating,
       reviews: tour.reviews,
       difficulty: tour.difficulty,
-      category: tour.category
+      category: tour.category,
+      tourType: tour.tourType
     })
     setImagePreviews(tour.images)
     setIsModalOpen(true)
@@ -97,10 +101,12 @@ export default function AdminToursPage() {
       duration: "",
       description: "",
       images: ["", "", "", ""],
+      inclusions: [],
       rating: 5,
       reviews: 0,
       difficulty: "Easy",
-      category: "Adventure"
+      category: "Adventure",
+      tourType: "Outbound"
     })
   }
 
@@ -114,6 +120,12 @@ export default function AdminToursPage() {
       newPreviews[index] = value
       setFormData({ ...formData, images: newImages })
       setImagePreviews(newPreviews)
+    } else if (name === "inclusions") {
+      const inclusions = value
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean)
+      setFormData({ ...formData, inclusions })
     } else if (name === "price" || name === "rating" || name === "reviews") {
       setFormData({ ...formData, [name]: Number(value) })
     } else {
@@ -389,6 +401,31 @@ export default function AdminToursPage() {
                   onChange={handleChange}
                   required
                   rows={3}
+                  className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-primary-500 focus:outline-none resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Tour Type</label>
+                <select
+                  name="tourType"
+                  value={formData.tourType}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-primary-500 focus:outline-none bg-white"
+                >
+                  <option value="Outbound">Outbound</option>
+                  <option value="Inbound">Inbound</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Package Inclusions</label>
+                <textarea
+                  name="inclusions"
+                  value={formData.inclusions.join("\n")}
+                  onChange={handleChange}
+                  rows={4}
+                  placeholder="One per line"
                   className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-primary-500 focus:outline-none resize-none"
                 />
               </div>

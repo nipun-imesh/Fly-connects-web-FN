@@ -1,6 +1,6 @@
 import Hero from "../components/ui/hero";
 import DataCard from "../components/ui/DataCard";
-import Testimonials from "../components/ui/testimonials";
+import QuickEnquiry from "../components/ui/QuickEnquiry";
 
 export default function HomePage() {
   return (
@@ -13,8 +13,8 @@ export default function HomePage() {
         <DataCard />
       </section>
 
-      <section id="testimonials" className="py-16">
-        <Testimonials />
+      <section>
+        <QuickEnquiry />
       </section>
     </div>
   );

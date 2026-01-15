@@ -64,7 +64,7 @@ export default function NavBar() {
           <img 
             src={Logo} 
             alt="Logo" 
-            className="w-[40px] h-[40px] sm:w-[50px] sm:h-[50px] md:w-[60px] md:h-[60px] object-cover rounded-full ring-2 sm:ring-4 ring-primary-100 group-hover:ring-primary-300 transition-all duration-300" 
+            className="w-[40px] h-[40px] sm:w-[50px] sm:h-[50px] md:w-[60px] md:h-[60px] object-cover rounded-full ring-2 sm:ring-4 ring-red-100 group-hover:ring-red-300 transition-all duration-300" 
           />
           <div className="flex flex-col">
             <h1 className="text-lg sm:text-xl md:text-2xl font-extrabold leading-tight tracking-tight">
@@ -85,10 +85,10 @@ export default function NavBar() {
               key={item.name}
               to={item.to}
               className={`relative text-[18px] py-2 transition-all duration-300 group
-                ${isActive(item.to) ? "text-primary-600" : "text-gray-700 hover:text-primary-500"}`}
+                ${isActive(item.to) ? "text-red-700" : "text-gray-900 hover:text-red-700"}`}
             >
               {item.name}
-              <span className={`absolute bottom-0 left-0 w-full h-[3px] bg-gradient-to-r from-primary-500 to-primary-600 transform transition-transform duration-300
+              <span className={`absolute bottom-0 left-0 w-full h-[3px] bg-gradient-to-r from-red-600 to-red-700 transform transition-transform duration-300
                 ${isActive(item.to) ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"}`}
               />
             </Link>
@@ -124,7 +124,7 @@ export default function NavBar() {
 
     {/* Mobile Menu Drawer */}
     <div 
-      className={`fixed top-0 right-0 h-full w-[220px] sm:w-[240px] bg-gradient-to-br from-white via-primary-50/20 to-white shadow-2xl z-50 md:hidden will-change-transform flex flex-col ${
+      className={`fixed top-0 right-0 h-full w-[220px] sm:w-[240px] bg-gradient-to-br from-white via-red-50/30 to-white shadow-2xl z-50 md:hidden will-change-transform flex flex-col ${
         isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
       }`}
       style={{ transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}

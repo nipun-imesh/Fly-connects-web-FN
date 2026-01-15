@@ -3,6 +3,8 @@ import HomePage from "../pages/HomePage"
 import ToursPage from "../pages/ToursPage"
 import AboutPage from "../pages/AboutPage"
 import ContactPage from "../pages/ContactPage"
+import TourDetailsPage from "../pages/TourDetailsPage"
+import OfferDetailsPage from "../pages/OfferDetailsPage"
 import AdminLoginPage from "../pages/AdminLoginPage"
 import AdminLayout from "../pages/AdminLayout"
 import AdminOffersPage from "../pages/AdminOffersPage"
@@ -13,6 +15,8 @@ export default function AppRoutes() {
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/tours" element={<ToursPage />} />
+      <Route path="/tours/:tourId" element={<TourDetailsPage />} />
+      <Route path="/offers/:offerId" element={<OfferDetailsPage />} />
       <Route path="/about" element={<AboutPage />} />
       <Route path="/contact" element={<ContactPage />} />
       
@@ -28,3 +32,4 @@ export default function AppRoutes() {
     </Routes>
   )
 }
+
