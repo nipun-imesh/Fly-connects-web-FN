@@ -1,6 +1,6 @@
-import Hero from "../components/ui/hero";
-import DataCard from "../components/ui/DataCard";
-import QuickEnquiry from "../components/ui/QuickEnquiry";
+import Hero from "../components/ui/hero"
+import DataCard from "../components/ui/DataCard"
+import QuickEnquiry from "../components/ui/QuickEnquiry"
 
 export default function HomePage() {
   return (
@@ -17,5 +17,5 @@ export default function HomePage() {
         <QuickEnquiry />
       </section>
     </div>
-  );
+  )
 }

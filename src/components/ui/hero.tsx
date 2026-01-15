@@ -1,17 +1,42 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import heroPhoto from "../../assets/heroSectionPhoto.png"
 
 export default function Hero() {
   const navigate = useNavigate()
 
-  const [disableHeroAnimation] = useState<boolean>(() => {
+  const [hasHeroImageLoaded, setHasHeroImageLoaded] = useState<boolean>(() => {
     try {
       return window.sessionStorage.getItem("heroImageLoaded") === "1"
     } catch {
       return false
     }
   })
+
+  useEffect(() => {
+    if (hasHeroImageLoaded) return
+
+    let cancelled = false
+    const img = new Image()
+    img.src = heroPhoto
+    img.onload = () => {
+      if (cancelled) return
+      setHasHeroImageLoaded(true)
+      try {
+        window.sessionStorage.setItem("heroImageLoaded", "1")
+      } catch {
+        // ignore
+      }
+    }
+    img.onerror = () => {
+      if (cancelled) return
+      setHasHeroImageLoaded(true)
+    }
+
+    return () => {
+      cancelled = true
+    }
+  }, [hasHeroImageLoaded])
 
   return (
     <div className="relative w-full inline-block overflow-hidden">
@@ -51,7 +76,7 @@ export default function Hero() {
       {/* Hero Image with Animation */}
       <img
         className={`w-full h-[400px] sm:h-[500px] md:h-[600px] lg:h-[750px] object-cover ${
-          disableHeroAnimation ? "" : "animate-ken-burns"
+          hasHeroImageLoaded ? "" : "animate-ken-burns"
         }`}
         src={heroPhoto}
         alt="Travel Adventure"
@@ -64,6 +89,7 @@ export default function Hero() {
           } catch {
             // ignore
           }
+          setHasHeroImageLoaded(true)
         }}
       />
     </div>
