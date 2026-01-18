@@ -1,75 +1,211 @@
 import { useState, useEffect } from "react"
-import { getAllServices, addService, updateService, deleteService } from "../services/serviceData"
-import type { Service } from "../services/serviceData"
+import type { Tour } from "../services/tourService"
+import { getToursFromFirebase, addTourToFirebase, updateTourInFirebase, deleteTourFromFirebase } from "../services/firebaseTourService"
+import { uploadImageToCloudinary, uploadBase64ToCloudinary } from "../services/cloudinary"
 
 export default function AdminOffersPage() {
-  const [services, setServices] = useState<Service[]>([])
+  const [offers, setOffers] = useState<Tour[]>([])
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [editingService, setEditingService] = useState<Service | null>(null)
+  const [editingOffer, setEditingOffer] = useState<Tour | null>(null)
   const [imagePreview, setImagePreview] = useState<string>("")
+  const [imageFile, setImageFile] = useState<File | null>(null)
   const [showAlert, setShowAlert] = useState(false)
   const [alertConfig, setAlertConfig] = useState({ title: "", message: "", type: "success" as "success" | "error" | "confirm", onConfirm: (() => {}) as () => void })
-  const [formData, setFormData] = useState<Omit<Service, "id">>({
+  const [newInclusion, setNewInclusion] = useState("")
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState("")
+  const [offerIdMap, setOfferIdMap] = useState<Map<number, string>>(new Map())
+
+  const [formData, setFormData] = useState<Omit<Tour, "id">>({
     title: "",
+    location: "",
+    price: "",
+    duration: "",
     description: "",
-    image: "",
-    icon: "",
-    color: "from-cyan-500 to-blue-600"
+    images: [""],
+    inclusions: [],
+    tourType: "Offers",
+    subTour: "",
+    isOffer: true
   })
 
   useEffect(() => {
-    loadServices()
+    loadOffers()
   }, [])
 
-  const loadServices = (): void => {
-    setServices(getAllServices())
+  const loadOffers = async (): Promise<void> => {
+    try {
+      const fetchedTours = await getToursFromFirebase()
+      // Filter only offers
+      const offersOnly = fetchedTours.filter((tour: any) => tour.isOffer === true)
+      
+      // Assign auto-incrementing IDs and create map
+      const idMap = new Map<number, string>()
+      const offersWithIds = offersOnly.map((offer: any, index: number) => {
+        const offerId = index + 1
+        idMap.set(offerId, offer.firestoreId)
+        return {
+          ...offer,
+          id: offerId
+        }
+      })
+      
+      setOffers(offersWithIds)
+      setOfferIdMap(idMap)
+    } catch (error) {
+      console.error("Error loading offers:", error)
+      setAlertConfig({
+        title: "Error",
+        message: "Failed to load offers. Please check your Firebase configuration.",
+        type: "error",
+        onConfirm: () => setShowAlert(false)
+      })
+      setShowAlert(true)
+    }
   }
 
-  const handleSubmit = (e: React.FormEvent): void => {
+  const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault()
     
-    if (editingService) {
-      updateService(editingService.id, formData)
-    } else {
-      addService(formData)
+    // Validate image
+    const hasImage = formData.images[0].trim() !== "" || imageFile !== null
+    if (!hasImage) {
+      setAlertConfig({
+        title: "Missing Image",
+        message: "Please provide an offer image before submitting.",
+        type: "error",
+        onConfirm: () => setShowAlert(false)
+      })
+      setShowAlert(true)
+      return
     }
+
+    // Validate inclusions
+    if (formData.inclusions.length === 0) {
+      setAlertConfig({
+        title: "Missing Inclusions",
+        message: "Please add at least one package inclusion.",
+        type: "error",
+        onConfirm: () => setShowAlert(false)
+      })
+      setShowAlert(true)
+      return
+    }
+
+    setIsUploading(true)
     
-    loadServices()
-    closeModal()
+    try {
+      // Upload image to Cloudinary
+      let uploadedImageUrl = ""
+      
+      setUploadProgress("Uploading image...")
+      
+      if (imageFile) {
+        uploadedImageUrl = await uploadImageToCloudinary(imageFile)
+      } else if (formData.images[0]) {
+        if (formData.images[0].startsWith("data:image")) {
+          uploadedImageUrl = await uploadBase64ToCloudinary(formData.images[0])
+        } else {
+          uploadedImageUrl = formData.images[0]
+        }
+      }
+
+      setUploadProgress("Saving offer to Firebase...")
+
+      const offerData = {
+        ...formData,
+        images: [uploadedImageUrl, uploadedImageUrl, uploadedImageUrl, uploadedImageUrl], // Repeat same image 4 times for compatibility
+        isOffer: true
+      }
+      
+      if (editingOffer) {
+        const firestoreId = (editingOffer as any).firestoreId || offerIdMap.get(editingOffer.id)
+        if (!firestoreId) {
+          throw new Error("Cannot update: Offer ID not found")
+        }
+        await updateTourInFirebase(firestoreId, offerData)
+      } else {
+        await addTourToFirebase(offerData)
+      }
+      
+      await loadOffers()
+      closeModal()
+      
+      setAlertConfig({
+        title: "Success!",
+        message: `Offer ${editingOffer ? "updated" : "added"} successfully!`,
+        type: "success",
+        onConfirm: () => setShowAlert(false)
+      })
+      setShowAlert(true)
+    } catch (error) {
+      console.error("Error saving offer:", error)
+      setAlertConfig({
+        title: "Error",
+        message: error instanceof Error ? error.message : "Failed to save offer. Please try again.",
+        type: "error",
+        onConfirm: () => setShowAlert(false)
+      })
+      setShowAlert(true)
+    } finally {
+      setIsUploading(false)
+      setUploadProgress("")
+    }
   }
 
-  const handleEdit = (service: Service): void => {
-    setEditingService(service)
-    setFormData({
-      title: service.title,
-      description: service.description,
-      image: service.image,
-      icon: service.icon,
-      color: service.color
-    })
-    setImagePreview(service.image)
-    setIsModalOpen(true)
-  }
-
-  const handleDelete = (id: number): void => {
+  const handleDelete = async (id: number): Promise<void> => {
     setAlertConfig({
-      title: "Delete Service",
-      message: "Are you sure you want to delete this service? This action cannot be undone.",
+      title: "Delete Offer",
+      message: "Are you sure you want to delete this offer? This action cannot be undone.",
       type: "confirm",
-      onConfirm: () => {
-        deleteService(id)
-        loadServices()
-        setShowAlert(false)
-        setAlertConfig({
-          title: "Success",
-          message: "Service deleted successfully!",
-          type: "success",
-          onConfirm: () => setShowAlert(false)
-        })
-        setShowAlert(true)
+      onConfirm: async () => {
+        try {
+          const firestoreId = offerIdMap.get(id)
+          if (!firestoreId) {
+            throw new Error("Cannot delete: Offer ID not found")
+          }
+          await deleteTourFromFirebase(firestoreId)
+          await loadOffers()
+          setShowAlert(false)
+          setAlertConfig({
+            title: "Success",
+            message: "Offer deleted successfully!",
+            type: "success",
+            onConfirm: () => setShowAlert(false)
+          })
+          setShowAlert(true)
+        } catch (error) {
+          console.error("Error deleting offer:", error)
+          setShowAlert(false)
+          setAlertConfig({
+            title: "Error",
+            message: error instanceof Error ? error.message : "Failed to delete offer. Please try again.",
+            type: "error",
+            onConfirm: () => setShowAlert(false)
+          })
+          setShowAlert(true)
+        }
       }
     })
     setShowAlert(true)
+  }
+
+  const handleEdit = (offer: Tour): void => {
+    setEditingOffer(offer)
+    setFormData({
+      title: offer.title,
+      location: offer.location,
+      price: offer.price,
+      duration: offer.duration,
+      description: offer.description,
+      images: [offer.images[0]], // Only first image
+      inclusions: offer.inclusions,
+      tourType: offer.tourType,
+      subTour: offer.subTour || "",
+      isOffer: true
+    })
+    setImagePreview(offer.images[0])
+    setIsModalOpen(true)
   }
 
   const openModal = (): void => {
@@ -78,34 +214,92 @@ export default function AdminOffersPage() {
 
   const closeModal = (): void => {
     setIsModalOpen(false)
-    setEditingService(null)
+    setEditingOffer(null)
     setImagePreview("")
+    setImageFile(null)
+    setNewInclusion("")
     setFormData({
       title: "",
+      location: "",
+      price: "",
+      duration: "",
       description: "",
-      image: "",
-      icon: "",
-      color: "from-cyan-500 to-blue-600"
+      images: [""],
+      inclusions: [],
+      tourType: "Offers",
+      subTour: "",
+      isOffer: true
     })
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>): void => {
     const { name, value } = e.target
-    setFormData({ ...formData, [name]: value })
-    
     if (name === "image") {
+      const newImages = [value]
+      setFormData({ ...formData, images: newImages })
       setImagePreview(value)
+    } else if (name === "price") {
+      setFormData({ ...formData, [name]: value })
+    } else {
+      setFormData({ ...formData, [name]: value })
     }
+  }
+
+  const addInclusion = (): void => {
+    if (newInclusion.trim()) {
+      setFormData({ ...formData, inclusions: [...formData.inclusions, newInclusion.trim()] })
+      setNewInclusion("")
+    }
+  }
+
+  const removeInclusion = (index: number): void => {
+    const newInclusions = formData.inclusions.filter((_, idx) => idx !== index)
+    setFormData({ ...formData, inclusions: newInclusions })
   }
 
   const handleImageFile = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const file = e.target.files?.[0]
     if (file) {
+      // Validate file type
+      if (!file.type.startsWith("image/")) {
+        setAlertConfig({
+          title: "Invalid File",
+          message: "Please upload a valid image file (JPG, PNG, GIF, etc.)",
+          type: "error",
+          onConfirm: () => setShowAlert(false)
+        })
+        setShowAlert(true)
+        return
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setAlertConfig({
+          title: "File Too Large",
+          message: "Image size should not exceed 5MB. Please choose a smaller image.",
+          type: "error",
+          onConfirm: () => setShowAlert(false)
+        })
+        setShowAlert(true)
+        return
+      }
+
+      setImageFile(file)
+
       const reader = new FileReader()
       reader.onloadend = () => {
         const result = reader.result as string
-        setFormData({ ...formData, image: result })
         setImagePreview(result)
+        setFormData({ ...formData, images: [result] })
+      }
+      reader.onerror = () => {
+        setAlertConfig({
+          title: "Upload Failed",
+          message: "Failed to read the image file. Please try again.",
+          type: "error",
+          onConfirm: () => setShowAlert(false)
+        })
+        setShowAlert(true)
       }
       reader.readAsDataURL(file)
     }
@@ -115,8 +309,8 @@ export default function AdminOffersPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">What We Offer Management</h1>
-          <p className="text-gray-600 mt-1">Manage your services and offerings</p>
+          <h1 className="text-3xl font-bold text-gray-800">Offers Management</h1>
+          <p className="text-gray-600 mt-1">Manage your special offer packages</p>
         </div>
         <button
           onClick={openModal}
@@ -125,31 +319,73 @@ export default function AdminOffersPage() {
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
           </svg>
-          Add New Service
+          Add New Offer
         </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {services.map((service) => (
-          <div key={service.id} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-            <img src={service.image} alt={service.title} className="w-full h-48 object-cover" />
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-xl font-bold text-gray-800">{service.title}</h3>
-                <span className="text-2xl">{service.icon}</span>
+        {offers.map((offer) => (
+          <div key={offer.id} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
+            {/* Image */}
+            <div className="relative h-56 overflow-hidden">
+              <img 
+                src={offer.images[0]} 
+                alt={offer.title} 
+                className="w-full h-full object-cover transition-transform duration-500 hover:scale-110" 
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none"></div>
+              {/* Offer Badge */}
+              <div className="absolute top-3 right-3 bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
+                SPECIAL OFFER
               </div>
-              <p className="text-gray-600 text-sm mb-4 line-clamp-3">{service.description}</p>
+            </div>
+
+            {/* Content Section */}
+            <div className="p-5">
+              {/* Title & Location */}
+              <div className="mb-3">
+                <h3 className="text-xl font-bold text-gray-800 mb-1 line-clamp-1">{offer.title}</h3>
+                <div className="flex items-center text-gray-600 text-sm">
+                  <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                  </svg>
+                  <span className="line-clamp-1">{offer.location}</span>
+                </div>
+              </div>
+
+              {/* Price & Duration */}
+              <div className="grid grid-cols-2 gap-2 mb-3 pb-3 border-b border-gray-200">
+                <div className="text-center">
+                  <div className="text-xs text-gray-500 mb-1">Price</div>
+                  <div className="text-sm font-bold text-primary-600">Rs {offer.price}</div>
+                </div>
+                <div className="text-center border-l border-gray-200">
+                  <div className="text-xs text-gray-500 mb-1">Duration</div>
+                  <div className="text-sm font-semibold text-gray-700">{offer.duration}</div>
+                </div>
+              </div>
+
+              {/* Description */}
+              <p className="text-gray-600 text-sm mb-4 line-clamp-2 leading-relaxed">{offer.description}</p>
+
+              {/* Action Buttons */}
               <div className="flex gap-2">
                 <button
-                  onClick={() => handleEdit(service)}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-semibold"
+                  onClick={() => handleEdit(offer)}
+                  className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-300 text-sm font-semibold shadow-md hover:shadow-lg flex items-center justify-center gap-2"
                 >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
                   Edit
                 </button>
                 <button
-                  onClick={() => handleDelete(service.id)}
-                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm font-semibold"
+                  onClick={() => handleDelete(offer.id)}
+                  className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-300 text-sm font-semibold shadow-md hover:shadow-lg flex items-center justify-center gap-2"
                 >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
                   Delete
                 </button>
               </div>
@@ -160,7 +396,7 @@ export default function AdminOffersPage() {
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto p-8 relative scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[85vh] overflow-y-auto p-8 relative scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
             <button
               onClick={closeModal}
               className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 hover:text-gray-900 flex items-center justify-center transition-all duration-300"
@@ -172,20 +408,62 @@ export default function AdminOffersPage() {
             </button>
             
             <h2 className="text-2xl font-bold text-gray-800 mb-6">
-              {editingService ? "Edit Service" : "Add New Service"}
+              {editingOffer ? "Edit Offer" : "Add New Offer"}
             </h2>
             
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Title</label>
-                <input
-                  type="text"
-                  name="title"
-                  value={formData.title}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-primary-500 focus:outline-none"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Title</label>
+                  <input
+                    type="text"
+                    name="title"
+                    value={formData.title}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-primary-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Location</label>
+                  <input
+                    type="text"
+                    name="location"
+                    value={formData.location}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-primary-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Price</label>
+                  <input
+                    type="number"
+                    name="price"
+                    value={formData.price}
+                    onChange={handleChange}
+                    required
+                    min="0"
+                    className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-primary-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Duration</label>
+                  <input
+                    type="text"
+                    name="duration"
+                    value={formData.duration}
+                    onChange={handleChange}
+                    required
+                    placeholder="e.g., 7 Days"
+                    className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-primary-500 focus:outline-none"
+                  />
+                </div>
               </div>
 
               <div>
@@ -195,99 +473,161 @@ export default function AdminOffersPage() {
                   value={formData.description}
                   onChange={handleChange}
                   required
-                  rows={4}
+                  rows={3}
                   className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-primary-500 focus:outline-none resize-none"
                 />
               </div>
 
-              {/* Image Preview */}
-              {imagePreview && (
-                <div className="mb-4">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Image Preview</label>
-                  <div className="relative group">
-                    <img 
-                      src={imagePreview} 
-                      alt="Preview" 
-                      className="w-full h-48 object-cover rounded-lg border-2 border-gray-200"
-                    />
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
-                      <span className="text-white text-sm font-semibold">Image Preview</span>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Package Inclusions</label>
+                
+                {/* Add Inclusion Input */}
+                <div className="flex gap-2 mb-3">
+                  <input
+                    type="text"
+                    value={newInclusion}
+                    onChange={(e) => setNewInclusion(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault()
+                        addInclusion()
+                      }
+                    }}
+                    placeholder="Type an inclusion and click Add"
+                    className="flex-1 px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-primary-500 focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={addInclusion}
+                    className="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-all duration-300 flex items-center gap-2"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Add
+                  </button>
+                </div>
+
+                {/* Inclusions List */}
+                {formData.inclusions.length > 0 && (
+                  <div className="space-y-2">
+                    {formData.inclusions.map((inclusion, idx) => (
+                      <div key={idx} className="flex items-center gap-2 bg-gray-50 px-4 py-3 rounded-lg border border-gray-200">
+                        <svg className="w-5 h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span className="flex-1 text-gray-700">{inclusion}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeInclusion(idx)}
+                          className="text-red-600 hover:text-red-700 transition-colors"
+                          aria-label="Remove inclusion"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {formData.inclusions.length === 0 && (
+                  <p className="text-sm text-gray-500 italic">No inclusions added yet. Add at least one inclusion above.</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-3">Offer Image (1 Required)</label>
+                <div className="space-y-3">
+                  {/* Image Preview */}
+                  {imagePreview && (
+                    <div className="relative group">
+                      <img 
+                        src={imagePreview} 
+                        alt="Preview"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement
+                          target.src = "https://via.placeholder.com/400x300?text=Invalid+Image"
+                        }}
+                        className="w-full h-48 object-cover rounded-lg border-2 border-gray-200"
+                      />
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                        <span className="text-white text-sm font-semibold">Image Preview</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormData({ ...formData, images: [""] })
+                          setImagePreview("")
+                          setImageFile(null)
+                        }}
+                        className="absolute top-2 right-2 bg-red-600 text-white px-3 py-1 rounded-lg text-xs font-semibold hover:bg-red-700"
+                      >
+                        Clear
+                      </button>
                     </div>
+                  )}
+
+                  {/* Upload File */}
+                  <label className="w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-red-500 transition-all cursor-pointer flex flex-col items-center justify-center gap-2 bg-gray-50 hover:bg-gray-100">
+                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    <span className="text-sm text-gray-600 font-medium">Upload Image</span>
+                    <span className="text-xs text-gray-400">PNG, JPG, GIF up to 5MB</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageFile}
+                      className="hidden"
+                    />
+                  </label>
+
+                  {/* URL Input */}
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">
+                      Or Enter URL {formData.images[0] && <span className="text-green-600 ml-1">✓</span>}
+                    </label>
+                    <input
+                      type="url"
+                      name="image"
+                      value={formData.images[0]}
+                      onChange={handleChange}
+                      required
+                      placeholder="https://images.unsplash.com/photo-..."
+                      className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-red-500 focus:ring-2 focus:ring-red-200 focus:outline-none transition-all"
+                    />
+                    <p className="text-xs text-gray-400 mt-1">Recommended: Use Unsplash or other CDN URLs</p>
                   </div>
                 </div>
-              )}
-
-              {/* Image Upload File */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Upload Image File</label>
-                <label className="w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-red-500 transition-all cursor-pointer flex flex-col items-center justify-center gap-2 bg-gray-50 hover:bg-gray-100">
-                  <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                  </svg>
-                  <span className="text-sm text-gray-600 font-medium">Click to upload image</span>
-                  <span className="text-xs text-gray-400">PNG, JPG, GIF up to 10MB</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageFile}
-                    className="hidden"
-                  />
-                </label>
-              </div>
-
-              {/* Image URL */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Or Enter Image URL</label>
-                <input
-                  type="url"
-                  name="image"
-                  value={formData.image}
-                  onChange={handleChange}
-                  placeholder="https://example.com/image.jpg"
-                  className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-red-500 focus:ring-2 focus:ring-red-200 focus:outline-none transition-all"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Icon (Emoji)</label>
-                <input
-                  type="text"
-                  name="icon"
-                  value={formData.icon}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-primary-500 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Color</label>
-                <select
-                  name="color"
-                  value={formData.color}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-primary-500 focus:outline-none bg-white"
-                >
-                  <option value="from-cyan-500 to-blue-600">Cyan to Blue</option>
-                  <option value="from-purple-500 to-pink-600">Purple to Pink</option>
-                  <option value="from-green-500 to-teal-600">Green to Teal</option>
-                  <option value="from-orange-500 to-red-600">Orange to Red</option>
-                </select>
               </div>
 
               <div className="flex gap-4 pt-4">
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="flex-1 px-6 py-3 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition"
+                  disabled={isUploading}
+                  className="flex-1 px-6 py-3 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-6 py-3 bg-gradient-to-r from-red-600 to-orange-500 text-white font-bold rounded-lg hover:from-red-700 hover:to-orange-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98]"
+                  disabled={isUploading}
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-red-600 to-orange-500 text-white font-bold rounded-lg hover:from-red-700 hover:to-orange-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
                 >
-                  {editingService ? "Update" : "Add"} Service
+                  {isUploading ? (
+                    <>
+                      <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span className="text-sm">{uploadProgress || "Uploading..."}</span>
+                    </>
+                  ) : (
+                    <span>{editingOffer ? "Update" : "Add"} Offer</span>
+                  )}
                 </button>
               </div>
             </form>

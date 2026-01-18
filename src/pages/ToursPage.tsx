@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import OffersMiniGrid from "../components/ui/OffersMiniGrid"
 import ToursGrid from "../components/ui/ToursGrid"
-import { getAllTours, getOutboundDestination } from "../services/tourService"
+import { getOutboundDestination } from "../services/tourService"
+import { getToursFromFirebase } from "../services/firebaseTourService"
 import type { Tour } from "../services/tourService"
 
 type TourTypeFilter = Tour["tourType"] | "All" | "Offer"
@@ -114,11 +115,30 @@ function Dropdown({ label, value, options, onChange, disabled }: DropdownProps) 
 }
 
 export default function ToursPage() {
-  const [selectedTourType, setSelectedTourType] = useState<TourTypeFilter>("Outbound")
+  const [selectedTourType, setSelectedTourType] = useState<TourTypeFilter>("All")
   const [selectedSubTour, setSelectedSubTour] = useState<string>("All")
   const [selectedInboundDuration, setSelectedInboundDuration] = useState<string>("All")
+  const [tours, setTours] = useState<Tour[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const tours = useMemo(() => getAllTours(), [])
+  useEffect(() => {
+    const loadTours = async () => {
+      try {
+        const fetchedTours = await getToursFromFirebase()
+        // Assign IDs for display
+        const toursWithIds = fetchedTours.map((tour: any, index: number) => ({
+          ...tour,
+          id: index + 1
+        }))
+        setTours(toursWithIds)
+      } catch (error) {
+        console.error("Error loading tours:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadTours()
+  }, [])
 
   const outboundSubTours = useMemo(() => {
     const options = new Set<string>()
@@ -143,12 +163,10 @@ export default function ToursPage() {
 
   const inboundDurations = useMemo(() => {
     const options = new Set<string>()
-    tours
-      .filter((tour) => tour.tourType === "Inbound")
-      .forEach((tour) => {
-        options.add(tour.duration)
-      })
-    return ["All", ...Array.from(options)]
+    tours.forEach((tour) => {
+      options.add(tour.duration)
+    })
+    return ["All", ...Array.from(options).sort()]
   }, [tours])
 
   const tourTypeOptions = useMemo<DropdownOption[]>(
@@ -167,7 +185,9 @@ export default function ToursPage() {
         ? outboundSubTours
         : selectedTourType === "Inbound"
           ? inboundSubTours
-          : ["All"]
+          : selectedTourType === "All"
+            ? ["All", ...Array.from(new Set([...outboundSubTours.slice(1), ...inboundSubTours.slice(1)]))]
+            : ["All"]
     return labels.map((label) => ({ label, value: label }))
   }, [inboundSubTours, outboundSubTours, selectedTourType])
 
@@ -206,7 +226,7 @@ export default function ToursPage() {
               label="Sub Tour"
               value={selectedSubTour}
               options={subTourOptions}
-              disabled={selectedTourType === "All" || selectedTourType === "Offer"}
+              disabled={selectedTourType !== "Inbound"}
               onChange={(next) => setSelectedSubTour(next)}
             />
 
@@ -214,7 +234,7 @@ export default function ToursPage() {
               label="Days"
               value={selectedInboundDuration}
               options={durationOptions}
-              disabled={selectedTourType === "Outbound"}
+              disabled={false}
               onChange={(next) => setSelectedInboundDuration(next)}
             />
           </div>
@@ -222,20 +242,19 @@ export default function ToursPage() {
 
         {selectedTourType === "Offer" && <OffersMiniGrid />}
 
-        <ToursGrid
-          tourType={selectedTourType === "All" || selectedTourType === "Offer" ? undefined : selectedTourType}
-          offerOnly={selectedTourType === "Offer"}
-          subTour={
-            selectedTourType === "All" || selectedTourType === "Offer" || selectedSubTour === "All"
-              ? undefined
-              : selectedSubTour
-          }
-          duration={
-            (selectedTourType === "Inbound" || selectedTourType === "All") && selectedInboundDuration !== "All"
-              ? selectedInboundDuration
-              : undefined
-          }
-        />
+        {loading ? (
+          <div className="flex justify-center items-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+          </div>
+        ) : (
+          <ToursGrid
+            tours={tours}
+            tourType={selectedTourType === "All" || selectedTourType === "Offer" ? undefined : selectedTourType}
+            offerOnly={selectedTourType === "Offer"}
+            subTour={selectedSubTour === "All" ? undefined : selectedSubTour}
+            duration={selectedInboundDuration === "All" ? undefined : selectedInboundDuration}
+          />
+        )}
       </div>
     </div>
   )

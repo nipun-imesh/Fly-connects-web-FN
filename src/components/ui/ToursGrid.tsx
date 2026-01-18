@@ -1,55 +1,35 @@
-import { useState, useEffect } from "react"
-import { getAllTours, getOutboundDestination } from "../../services/tourService"
+import { useMemo } from "react"
+import { getOutboundDestination } from "../../services/tourService"
 import type { Tour } from "../../services/tourService"
 import TourListCard from "./TourListCard"
 
 interface ToursGridProps {
+  tours: Tour[]
   tourType?: Tour["tourType"]
   subTour?: string
   duration?: string
   offerOnly?: boolean
 }
 
-export default function ToursGrid({ tourType, subTour, duration, offerOnly }: ToursGridProps) {
-  const [tours, setTours] = useState<Tour[]>([])
-  const [loading, setLoading] = useState<boolean>(true)
-
-  useEffect(() => {
-    const fetchTours = (): void => {
-      try {
-        const data = getAllTours()
-        setTours(data)
-      } catch (error) {
-        console.error("Error fetching tours:", error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchTours()
-  }, [])
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary-600"></div>
-      </div>
-    )
-  }
-
-  const filteredTours = (() => {
+export default function ToursGrid({ tours, tourType, subTour, duration, offerOnly }: ToursGridProps) {
+  const filteredTours = useMemo(() => {
     let next = tourType ? tours.filter((tour) => tour.tourType === tourType) : tours
 
     if (offerOnly) {
       next = next.filter((tour) => tour.isOffer)
     }
 
-    if (tourType === "Outbound" && subTour) {
-      next = next.filter((tour) => getOutboundDestination(tour) === subTour)
-    }
-
-    if (tourType === "Inbound" && subTour) {
-      next = next.filter((tour) => tour.location === subTour)
+    if (subTour) {
+      if (tourType === "Outbound") {
+        next = next.filter((tour) => getOutboundDestination(tour) === subTour)
+      } else if (tourType === "Inbound") {
+        next = next.filter((tour) => tour.location === subTour)
+      } else {
+        // When no tour type is selected, filter across both Outbound and Inbound
+        next = next.filter((tour) => 
+          getOutboundDestination(tour) === subTour || tour.location === subTour
+        )
+      }
     }
 
     if (duration) {
@@ -57,7 +37,7 @@ export default function ToursGrid({ tourType, subTour, duration, offerOnly }: To
     }
 
     return next
-  })()
+  }, [tours, tourType, subTour, duration, offerOnly])
 
   if (filteredTours.length === 0) {
     return (

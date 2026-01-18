@@ -1,26 +1,31 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { authenticateAdmin } from "../services/adminAuth"
 import Logo from "../assets/ajmal.jpg"
 
 export default function AdminLoginPage() {
   const navigate = useNavigate()
-  const [credentials, setCredentials] = useState({ username: "", password: "" })
+  const [credentials, setCredentials] = useState({ email: "", password: "" })
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [showAlert, setShowAlert] = useState(false)
+  const [errorMessage, setErrorMessage] = useState("")
 
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault()
     setIsLoading(true)
-    
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 800))
-    
-    // Simple authentication (in production, use proper backend authentication)
-    if (credentials.username === "admin" && credentials.password === "admin123") {
+    setShowAlert(false)
+
+    const result = await authenticateAdmin({
+      email: credentials.email,
+      password: credentials.password,
+    })
+
+    if (result.success) {
       localStorage.setItem("adminLoggedIn", "true")
       navigate("/admin/offers")
     } else {
+      setErrorMessage(result.error || "Authentication failed")
       setIsLoading(false)
       setShowAlert(true)
     }
@@ -75,7 +80,7 @@ export default function AdminLoginPage() {
               
               {/* Message */}
               <p className="text-gray-600 text-center mb-6">
-                Invalid username or password. Please try again.
+                {errorMessage || "Invalid username or password. Please try again."}
               </p>
               
               {/* Button */}
@@ -124,14 +129,15 @@ export default function AdminLoginPage() {
                 </div>
                 <input
                   type="text"
-                  id="username"
-                  name="username"
-                  value={credentials.username}
+                  id="email"
+                  name="email"
+                  autoComplete="email"
+                  value={credentials.email}
                   onChange={handleChange}
                   required
                   disabled={isLoading}
                   className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:border-red-500 focus:ring-2 focus:ring-red-200 focus:bg-white focus:outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed selection:bg-red-500 selection:text-white"
-                  placeholder="Enter your username"
+                  placeholder="Enter your email"
                 />
               </div>
             </div>
@@ -203,6 +209,20 @@ export default function AdminLoginPage() {
               )}
             </button>
           </form>
+
+          {/* Register Link */}
+          <div className="mt-6 text-center">
+            <p className="text-sm text-gray-600">
+              Need to create an admin account?{" "}
+              <button
+                type="button"
+                onClick={() => navigate("/admin/register")}
+                className="text-red-600 hover:text-red-700 font-semibold transition-colors"
+              >
+                Register here
+              </button>
+            </p>
+          </div>
         </div>
       </div>
     </div>

@@ -6,8 +6,8 @@ interface TourListCardProps {
   tour: Tour
 }
 
-const formatPrice = (price: number): string => {
-  return `$${price.toLocaleString()}`
+const formatPrice = (price: string): string => {
+  return `Rs ${price.toLocaleString()}`
 }
 
 export default function TourListCard({ tour }: TourListCardProps) {
@@ -40,9 +40,12 @@ export default function TourListCard({ tour }: TourListCardProps) {
       tabIndex={0}
       onClick={goToDetails}
       onKeyDown={(e) => {
-        if (e.key === "Enter") goToDetails()
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault()
+          goToDetails()
+        }
       }}
-      className="group bg-white rounded-2xl overflow-hidden shadow-lg transition-all duration-300 cursor-pointer border border-gray-100 hover:border-red-200 hover:shadow-2xl hover:-translate-y-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-300 focus-visible:ring-offset-2"
+      className="group bg-white rounded-2xl overflow-hidden shadow-lg transition-all duration-300 cursor-pointer border border-gray-100 hover:border-red-300 hover:shadow-2xl hover:-translate-y-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2"
     >
       <div className="flex flex-col md:flex-row">
         {/* Left: Image slider */}
@@ -50,6 +53,11 @@ export default function TourListCard({ tour }: TourListCardProps) {
           <img
             src={currentImage}
             alt={`${tour.title} ${imageIndex + 1}`}
+            loading="lazy"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement
+              target.src = "https://via.placeholder.com/800x600?text=Image+Not+Found"
+            }}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/45 to-transparent pointer-events-none" />
@@ -144,8 +152,7 @@ export default function TourListCard({ tour }: TourListCardProps) {
 
             <div className="flex items-center gap-1 text-sm">
               <span className="text-yellow-500">★</span>
-              <span className="font-semibold text-gray-900">{tour.rating}</span>
-              <span className="text-gray-500">({tour.reviews})</span>
+              
             </div>
           </div>
 
@@ -171,26 +178,6 @@ export default function TourListCard({ tour }: TourListCardProps) {
               {tour.duration}
             </span>
 
-            <span className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700">
-              {tour.difficulty}
-            </span>
-
-            <span className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700">
-              {tour.category}
-            </span>
-          </div>
-
-          <div className="mt-6">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation()
-                goToDetails()
-              }}
-              className="w-full sm:w-auto px-6 py-3 rounded-lg font-semibold bg-gradient-to-r from-primary-600 to-primary-700 text-white hover:from-primary-700 hover:to-primary-800 transition-all duration-300 shadow-lg hover:shadow-primary-500/30"
-            >
-              View Details
-            </button>
           </div>
         </div>
       </div>

@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react"
+import { useMemo, useState, useEffect } from "react"
 import type { ChangeEvent, FormEvent } from "react"
 import { Link, useParams } from "react-router-dom"
 import emailjs from "@emailjs/browser"
 import Loader from "../components/ui/Loader"
 import usePreloadImages from "../hooks/usePreloadImages"
-import { getTourById } from "../services/tourService"
+import { getToursFromFirebase } from "../services/firebaseTourService"
+import type { Tour } from "../services/tourService"
 
 interface EnquiryFormData {
   name: string
@@ -43,9 +44,35 @@ export default function TourDetailsPage() {
   const params = useParams()
   const tourId = Number(params.tourId)
 
-  const tour = useMemo(() => {
-    if (!Number.isFinite(tourId)) return undefined
-    return getTourById(tourId)
+  const [tour, setTour] = useState<Tour | undefined>(undefined)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const loadTour = async () => {
+      try {
+        if (!Number.isFinite(tourId)) {
+          setTour(undefined)
+          setLoading(false)
+          return
+        }
+
+        const fetchedTours = await getToursFromFirebase()
+        // Assign IDs to match the URL parameter
+        const toursWithIds = fetchedTours.map((t: any, index: number) => ({
+          ...t,
+          id: index + 1
+        }))
+        
+        const foundTour = toursWithIds.find((t: Tour) => t.id === tourId)
+        setTour(foundTour)
+      } catch (error) {
+        console.error("Error loading tour:", error)
+        setTour(undefined)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadTour()
   }, [tourId])
 
   const tourImages = useMemo(() => tour?.images ?? [], [tour])
@@ -203,6 +230,10 @@ export default function TourDetailsPage() {
     }
   }
 
+  if (loading) {
+    return <Loader label="Loading tour details..." />
+  }
+
   if (!tour) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 pt-16 sm:pt-20 md:pt-24 pb-12 sm:pb-16 md:pb-20">
@@ -322,7 +353,7 @@ export default function TourDetailsPage() {
               <div className="flex items-baseline justify-between">
                 <h2 className="text-xl font-bold text-gray-900">Price</h2>
                 <p className="text-2xl font-extrabold text-primary-700">
-                  ${tour.price.toLocaleString()}
+                  Rs {tour.price.toLocaleString()}
                 </p>
               </div>
               <p className="text-sm text-gray-600 mt-1">per person</p>

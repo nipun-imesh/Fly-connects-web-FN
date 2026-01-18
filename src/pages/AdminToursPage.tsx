@@ -1,48 +1,201 @@
 import { useState, useEffect } from "react"
-import { getAllTours, addTour, updateTour, deleteTour } from "../services/tourService"
 import type { Tour } from "../services/tourService"
+import { getToursFromFirebase, addTourToFirebase, updateTourInFirebase, deleteTourFromFirebase } from "../services/firebaseTourService"
+import { uploadImageToCloudinary, uploadBase64ToCloudinary } from "../services/cloudinary"
 
 export default function AdminToursPage() {
   const [tours, setTours] = useState<Tour[]>([])
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingTour, setEditingTour] = useState<Tour | null>(null)
   const [imagePreviews, setImagePreviews] = useState<string[]>(["", "", "", ""])
+  const [imageFiles, setImageFiles] = useState<(File | null)[]>([null, null, null, null])
   const [showAlert, setShowAlert] = useState(false)
   const [alertConfig, setAlertConfig] = useState({ title: "", message: "", type: "success" as "success" | "error" | "confirm", onConfirm: (() => {}) as () => void })
+  const [newInclusion, setNewInclusion] = useState("")
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState("")
+  const [tourIdMap, setTourIdMap] = useState<Map<number, string>>(new Map())
+
   const [formData, setFormData] = useState<Omit<Tour, "id">>({
     title: "",
     location: "",
-    price: 0,
+    price: "", // <-- changed from 0 to empty string
     duration: "",
     description: "",
     images: ["", "", "", ""],
     inclusions: [],
-    rating: 5,
-    reviews: 0,
-    difficulty: "Easy",
-    category: "Adventure",
-    tourType: "Outbound"
+    tourType: "Outbound",
+    subTour: ""
   })
 
   useEffect(() => {
     loadTours()
   }, [])
 
-  const loadTours = (): void => {
-    setTours(getAllTours())
+  const loadTours = async (): Promise<void> => {
+    try {
+      const fetchedTours = await getToursFromFirebase()
+      
+      // Filter out offers - only show regular tours
+      const toursOnly = fetchedTours.filter((tour: any) => tour.isOffer !== true)
+      
+      // Assign auto-incrementing IDs and create map
+      const idMap = new Map<number, string>()
+      const toursWithIds = toursOnly.map((tour: any, index: number) => {
+        const tourId = index + 1
+        idMap.set(tourId, tour.firestoreId)
+        return {
+          ...tour,
+          id: tourId
+        }
+      })
+      
+      setTours(toursWithIds)
+      setTourIdMap(idMap)
+    } catch (error) {
+      console.error("Error loading tours:", error)
+      setAlertConfig({
+        title: "Error",
+        message: "Failed to load tours. Please check your Firebase configuration.",
+        type: "error",
+        onConfirm: () => setShowAlert(false)
+      })
+      setShowAlert(true)
+    }
   }
 
-  const handleSubmit = (e: React.FormEvent): void => {
+  const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault()
     
-    if (editingTour) {
-      updateTour(editingTour.id, formData)
-    } else {
-      addTour(formData)
+    // Validate images
+    const hasAllImages = formData.images.every(img => img.trim() !== "") || imageFiles.some(file => file !== null)
+    if (!hasAllImages) {
+      setAlertConfig({
+        title: "Missing Images",
+        message: "Please provide all 4 tour images before submitting.",
+        type: "error",
+        onConfirm: () => setShowAlert(false)
+      })
+      setShowAlert(true)
+      return
     }
+
+    // Validate inclusions
+    if (formData.inclusions.length === 0) {
+      setAlertConfig({
+        title: "Missing Inclusions",
+        message: "Please add at least one package inclusion.",
+        type: "error",
+        onConfirm: () => setShowAlert(false)
+      })
+      setShowAlert(true)
+      return
+    }
+
+    setIsUploading(true)
     
-    loadTours()
-    closeModal()
+    try {
+      // Upload images to Cloudinary
+      const uploadedImageUrls: string[] = []
+      
+      for (let i = 0; i < 4; i++) {
+        setUploadProgress(`Uploading image ${i + 1} of 4...`)
+        
+        if (imageFiles[i]) {
+          // Upload file to Cloudinary
+          const url = await uploadImageToCloudinary(imageFiles[i]!)
+          uploadedImageUrls.push(url)
+        } else if (formData.images[i]) {
+          // Check if it's a base64 image
+          if (formData.images[i].startsWith("data:image")) {
+            const url = await uploadBase64ToCloudinary(formData.images[i])
+            uploadedImageUrls.push(url)
+          } else {
+            // Use existing URL
+            uploadedImageUrls.push(formData.images[i])
+          }
+        }
+      }
+
+      setUploadProgress("Saving tour to Firebase...")
+
+      const tourData = {
+        ...formData,
+        images: uploadedImageUrls
+      }
+      
+      if (editingTour) {
+        // Get firestoreId from editingTour or tourIdMap
+        const firestoreId = (editingTour as any).firestoreId || tourIdMap.get(editingTour.id)
+        if (!firestoreId) {
+          throw new Error("Cannot update: Tour ID not found")
+        }
+        await updateTourInFirebase(firestoreId, tourData)
+      } else {
+        await addTourToFirebase(tourData)
+      }
+      
+      await loadTours()
+      closeModal()
+      
+      // Show success message
+      setAlertConfig({
+        title: "Success!",
+        message: `Tour ${editingTour ? "updated" : "added"} successfully!`,
+        type: "success",
+        onConfirm: () => setShowAlert(false)
+      })
+      setShowAlert(true)
+    } catch (error) {
+      console.error("Error saving tour:", error)
+      setAlertConfig({
+        title: "Error",
+        message: error instanceof Error ? error.message : "Failed to save tour. Please try again.",
+        type: "error",
+        onConfirm: () => setShowAlert(false)
+      })
+      setShowAlert(true)
+    } finally {
+      setIsUploading(false)
+      setUploadProgress("")
+    }
+  }
+
+  const handleDelete = async (id: number): Promise<void> => {
+    setAlertConfig({
+      title: "Delete Tour",
+      message: "Are you sure you want to delete this tour? This action cannot be undone.",
+      type: "confirm",
+      onConfirm: async () => {
+        try {
+          const firestoreId = tourIdMap.get(id)
+          if (!firestoreId) {
+            throw new Error("Cannot delete: Tour ID not found")
+          }
+          await deleteTourFromFirebase(firestoreId)
+          await loadTours()
+          setShowAlert(false)
+          setAlertConfig({
+            title: "Success",
+            message: "Tour deleted successfully!",
+            type: "success",
+            onConfirm: () => setShowAlert(false)
+          })
+          setShowAlert(true)
+        } catch (error) {
+          console.error("Error deleting tour:", error)
+          setShowAlert(false)
+          setAlertConfig({
+            title: "Error",
+            message: error instanceof Error ? error.message : "Failed to delete tour. Please try again.",
+            type: "error",
+            onConfirm: () => setShowAlert(false)
+          })
+          setShowAlert(true)
+        }
+      }
+    })
+    setShowAlert(true)
   }
 
   const handleEdit = (tour: Tour): void => {
@@ -55,35 +208,11 @@ export default function AdminToursPage() {
       description: tour.description,
       images: tour.images,
       inclusions: tour.inclusions,
-      rating: tour.rating,
-      reviews: tour.reviews,
-      difficulty: tour.difficulty,
-      category: tour.category,
-      tourType: tour.tourType
+      tourType: tour.tourType,
+      subTour: tour.subTour || ""
     })
     setImagePreviews(tour.images)
     setIsModalOpen(true)
-  }
-
-  const handleDelete = (id: number): void => {
-    setAlertConfig({
-      title: "Delete Tour",
-      message: "Are you sure you want to delete this tour? This action cannot be undone.",
-      type: "confirm",
-      onConfirm: () => {
-        deleteTour(id)
-        loadTours()
-        setShowAlert(false)
-        setAlertConfig({
-          title: "Success",
-          message: "Tour deleted successfully!",
-          type: "success",
-          onConfirm: () => setShowAlert(false)
-        })
-        setShowAlert(true)
-      }
-    })
-    setShowAlert(true)
   }
 
   const openModal = (): void => {
@@ -94,19 +223,18 @@ export default function AdminToursPage() {
     setIsModalOpen(false)
     setEditingTour(null)
     setImagePreviews(["", "", "", ""])
+    setImageFiles([null, null, null, null])
+    setNewInclusion("")
     setFormData({
       title: "",
       location: "",
-      price: 0,
+      price: "",
       duration: "",
       description: "",
       images: ["", "", "", ""],
       inclusions: [],
-      rating: 5,
-      reviews: 0,
-      difficulty: "Easy",
-      category: "Adventure",
-      tourType: "Outbound"
+      tourType: "Outbound",
+      subTour: ""
     })
   }
 
@@ -120,31 +248,76 @@ export default function AdminToursPage() {
       newPreviews[index] = value
       setFormData({ ...formData, images: newImages })
       setImagePreviews(newPreviews)
-    } else if (name === "inclusions") {
-      const inclusions = value
-        .split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean)
-      setFormData({ ...formData, inclusions })
-    } else if (name === "price" || name === "rating" || name === "reviews") {
-      setFormData({ ...formData, [name]: Number(value) })
+    } else if (name === "price") {
+      setFormData({ ...formData, [name]: value })
     } else {
       setFormData({ ...formData, [name]: value })
     }
   }
 
+  const addInclusion = (): void => {
+    if (newInclusion.trim()) {
+      setFormData({ ...formData, inclusions: [...formData.inclusions, newInclusion.trim()] })
+      setNewInclusion("")
+    }
+  }
+
+  const removeInclusion = (index: number): void => {
+    const newInclusions = formData.inclusions.filter((_, idx) => idx !== index)
+    setFormData({ ...formData, inclusions: newInclusions })
+  }
+
   const handleImageFile = (e: React.ChangeEvent<HTMLInputElement>, index: number): void => {
     const file = e.target.files?.[0]
     if (file) {
+      // Validate file type
+      if (!file.type.startsWith("image/")) {
+        setAlertConfig({
+          title: "Invalid File",
+          message: "Please upload a valid image file (JPG, PNG, GIF, etc.)",
+          type: "error",
+          onConfirm: () => setShowAlert(false)
+        })
+        setShowAlert(true)
+        return
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setAlertConfig({
+          title: "File Too Large",
+          message: "Image size should not exceed 5MB. Please choose a smaller image.",
+          type: "error",
+          onConfirm: () => setShowAlert(false)
+        })
+        setShowAlert(true)
+        return
+      }
+// Store file for upload
+      const newFiles = [...imageFiles]
+      newFiles[index] = file
+      setImageFiles(newFiles)
+
       const reader = new FileReader()
       reader.onloadend = () => {
         const result = reader.result as string
-        const newImages = [...formData.images]
-        newImages[index] = result
         const newPreviews = [...imagePreviews]
         newPreviews[index] = result
-        setFormData({ ...formData, images: newImages })
         setImagePreviews(newPreviews)
+        
+        // Don't set in formData yet - will upload to Cloudinary on submit
+        const newImages = [...formData.images]
+        newImages[index] = result
+        setFormData({ ...formData, images: newImages })
+      }
+      reader.onerror = () => {
+        setAlertConfig({
+          title: "Upload Failed",
+          message: "Failed to read the image file. Please try again.",
+          type: "error",
+          onConfirm: () => setShowAlert(false)
+        })
+        setShowAlert(true)
       }
       reader.readAsDataURL(file)
     }
@@ -205,31 +378,13 @@ export default function AdminToursPage() {
               <div className="grid grid-cols-3 gap-2 mb-3 pb-3 border-b border-gray-200">
                 <div className="text-center">
                   <div className="text-xs text-gray-500 mb-1">Price</div>
-                  <div className="text-sm font-bold text-primary-600">${tour.price}</div>
+                  <div className="text-sm font-bold text-primary-600">Rs {tour.price}</div>
                 </div>
                 <div className="text-center border-l border-r border-gray-200">
                   <div className="text-xs text-gray-500 mb-1">Duration</div>
                   <div className="text-sm font-semibold text-gray-700">{tour.duration}</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-xs text-gray-500 mb-1">Rating</div>
-                  <div className="text-sm font-semibold text-gray-700 flex items-center justify-center">
-                    <svg className="w-4 h-4 text-yellow-500 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                    {tour.rating}
-                  </div>
-                </div>
-              </div>
-
-              {/* Difficulty & Category Tags */}
-              <div className="flex gap-2 mb-3">
-                <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full">
-                  {tour.difficulty}
-                </span>
-                <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full">
-                  {tour.category}
-                </span>
+              
               </div>
 
               {/* Description */}
@@ -305,7 +460,7 @@ export default function AdminToursPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Price</label>
                   <input
@@ -328,66 +483,6 @@ export default function AdminToursPage() {
                     onChange={handleChange}
                     required
                     placeholder="e.g., 7 Days"
-                    className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-primary-500 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Difficulty</label>
-                  <select
-                    name="difficulty"
-                    value={formData.difficulty}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-primary-500 focus:outline-none bg-white"
-                  >
-                    <option value="Easy">Easy</option>
-                    <option value="Moderate">Moderate</option>
-                    <option value="Challenging">Challenging</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Category</label>
-                  <select
-                    name="category"
-                    value={formData.category}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-primary-500 focus:outline-none bg-white"
-                  >
-                    <option value="Adventure">Adventure</option>
-                    <option value="Beach">Beach</option>
-                    <option value="Cultural">Cultural</option>
-                    <option value="Nature">Nature</option>
-                    <option value="Wildlife">Wildlife</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Rating</label>
-                  <input
-                    type="number"
-                    name="rating"
-                    value={formData.rating}
-                    onChange={handleChange}
-                    required
-                    min="0"
-                    max="5"
-                    step="0.1"
-                    className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-primary-500 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Reviews</label>
-                  <input
-                    type="number"
-                    name="reviews"
-                    value={formData.reviews}
-                    onChange={handleChange}
-                    required
-                    min="0"
                     className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-primary-500 focus:outline-none"
                   />
                 </div>
@@ -418,16 +513,78 @@ export default function AdminToursPage() {
                 </select>
               </div>
 
+              {formData.tourType === "Inbound" && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Sub Tour</label>
+                  <input
+                    type="text"
+                    name="subTour"
+                    value={formData.subTour || ""}
+                    onChange={handleChange}
+                    placeholder="e.g., Sigiriya, Ella, Kandy"
+                    className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-primary-500 focus:outline-none"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Specify the sub-destination or area for this inbound tour</p>
+                </div>
+              )}
+
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Package Inclusions</label>
-                <textarea
-                  name="inclusions"
-                  value={formData.inclusions.join("\n")}
-                  onChange={handleChange}
-                  rows={4}
-                  placeholder="One per line"
-                  className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-primary-500 focus:outline-none resize-none"
-                />
+                
+                {/* Add Inclusion Input */}
+                <div className="flex gap-2 mb-3">
+                  <input
+                    type="text"
+                    value={newInclusion}
+                    onChange={(e) => setNewInclusion(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault()
+                        addInclusion()
+                      }
+                    }}
+                    placeholder="Type an inclusion and click Add"
+                    className="flex-1 px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-primary-500 focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={addInclusion}
+                    className="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-all duration-300 flex items-center gap-2"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Add
+                  </button>
+                </div>
+
+                {/* Inclusions List */}
+                {formData.inclusions.length > 0 && (
+                  <div className="space-y-2">
+                    {formData.inclusions.map((inclusion, idx) => (
+                      <div key={idx} className="flex items-center gap-2 bg-gray-50 px-4 py-3 rounded-lg border border-gray-200">
+                        <svg className="w-5 h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span className="flex-1 text-gray-700">{inclusion}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeInclusion(idx)}
+                          className="text-red-600 hover:text-red-700 transition-colors"
+                          aria-label="Remove inclusion"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {formData.inclusions.length === 0 && (
+                  <p className="text-sm text-gray-500 italic">No inclusions added yet. Add at least one inclusion above.</p>
+                )}
               </div>
 
               <div>
@@ -435,14 +592,39 @@ export default function AdminToursPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {[0, 1, 2, 3].map((idx) => (
                     <div key={idx} className="space-y-3">
-                      <h4 className="text-sm font-semibold text-gray-600">Image {idx + 1}</h4>
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-semibold text-gray-600">Image {idx + 1}</h4>
+                        {imagePreviews[idx] && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newImages = [...formData.images]
+                              newImages[idx] = ""
+                              const newPreviews = [...imagePreviews]
+                              newPreviews[idx] = ""
+                              const newFiles = [...imageFiles]
+                              newFiles[idx] = null
+                              setFormData({ ...formData, images: newImages })
+                              setImagePreviews(newPreviews)
+                              setImageFiles(newFiles)
+                            }}
+                            className="text-xs text-red-600 hover:text-red-700 font-semibold"
+                          >
+                            Clear
+                          </button>
+                        )}
+                      </div>
                       
                       {/* Image Preview */}
                       {imagePreviews[idx] && (
                         <div className="relative group">
                           <img 
                             src={imagePreviews[idx]} 
-                            alt={`Preview ${idx + 1}`} 
+                            alt={`Preview ${idx + 1}`}
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement
+                              target.src = "https://via.placeholder.com/400x300?text=Invalid+Image"
+                            }}
                             className="w-full h-32 object-cover rounded-lg border-2 border-gray-200"
                           />
                           <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
@@ -467,16 +649,19 @@ export default function AdminToursPage() {
 
                       {/* URL Input */}
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">Or Enter URL</label>
+                        <label className="block text-xs text-gray-500 mb-1">
+                          Or Enter URL {formData.images[idx] && <span className="text-green-600 ml-1">✓</span>}
+                        </label>
                         <input
                           type="url"
                           name={`image-${idx}`}
                           value={formData.images[idx]}
                           onChange={handleChange}
                           required
-                          placeholder="https://example.com/image.jpg"
+                          placeholder="https://images.unsplash.com/photo-..."
                           className="w-full px-3 py-2 text-sm rounded-lg border-2 border-gray-200 focus:border-red-500 focus:ring-2 focus:ring-red-200 focus:outline-none transition-all"
                         />
+                        <p className="text-xs text-gray-400 mt-1">Recommended: Use Unsplash or other CDN URLs</p>
                       </div>
                     </div>
                   ))}
@@ -487,15 +672,27 @@ export default function AdminToursPage() {
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="flex-1 px-6 py-3 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition"
+                  disabled={isUploading}
+                  className="flex-1 px-6 py-3 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-6 py-3 bg-gradient-to-r from-red-600 to-orange-500 text-white font-bold rounded-lg hover:from-red-700 hover:to-orange-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98]"
+                  disabled={isUploading}
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-red-600 to-orange-500 text-white font-bold rounded-lg hover:from-red-700 hover:to-orange-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
                 >
-                  {editingTour ? "Update" : "Add"} Tour
+                  {isUploading ? (
+                    <>
+                      <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span className="text-sm">{uploadProgress || "Uploading..."}</span>
+                    </>
+                  ) : (
+                    <span>{editingTour ? "Update" : "Add"} Tour</span>
+                  )}
                 </button>
               </div>
             </form>
