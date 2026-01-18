@@ -5,7 +5,6 @@ import type { Tour } from "../../services/tourService"
 
 export default function DataCard() {
   const navigate = useNavigate()
-  const [selectedOffer, setSelectedOffer] = useState<Tour | null>(null)
   const [offers, setOffers] = useState<Tour[]>([])
   const [loading, setLoading] = useState(true)
 
