@@ -321,13 +321,7 @@ export default function TourDetailsPage() {
                 {tour.duration}
               </span>
               <span className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700">
-                {tour.difficulty}
-              </span>
-              <span className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700">
-                {tour.category}
-              </span>
-              <span className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700">
-                ★ {tour.rating} ({tour.reviews})
+                {tour.tourType}
               </span>
             </div>
 
