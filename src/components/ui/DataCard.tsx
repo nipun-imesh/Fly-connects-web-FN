@@ -33,10 +33,6 @@ export default function DataCard() {
     navigate(`/tours/${offer.id}`)
   }
 
-  const closeModal = (): void => {
-    setSelectedOffer(null)
-  }
-
   return (
     <div className="py-12 sm:py-16 md:py-20 bg-gradient-to-b from-gray-50 to-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-5">
@@ -124,10 +120,10 @@ export default function DataCard() {
           </div>
         )}
       </div>
+    </div>
+  );
+}
 
-      {/* Modal */}
-      {selectedOffer && (
-        <div 
           className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in"
           onClick={closeModal}
         >
