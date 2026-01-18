@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
 import { getToursFromFirebase } from "../../services/firebaseTourService"
 import type { Tour } from "../../services/tourService"
 
 export default function DataCard() {
+  const navigate = useNavigate()
   const [selectedOffer, setSelectedOffer] = useState<Tour | null>(null)
   const [offers, setOffers] = useState<Tour[]>([])
   const [loading, setLoading] = useState(true)
@@ -11,9 +13,13 @@ export default function DataCard() {
     const loadOffers = async () => {
       try {
         const fetchedTours = await getToursFromFirebase()
-        // Filter only offers
+        // Filter only offers and assign IDs
         const offersOnly = fetchedTours.filter((tour: any) => tour.isOffer === true)
-        setOffers(offersOnly)
+        const offersWithIds = offersOnly.map((offer: any, index: number) => ({
+          ...offer,
+          id: index + 1
+        }))
+        setOffers(offersWithIds)
       } catch (error) {
         console.error("Error loading offers:", error)
       } finally {
@@ -24,7 +30,7 @@ export default function DataCard() {
   }, [])
 
   const handleCardClick = (offer: Tour): void => {
-    setSelectedOffer(offer)
+    navigate(`/tours/${offer.id}`)
   }
 
   const closeModal = (): void => {
