@@ -75,9 +75,7 @@ export default function Hero() {
 
       {/* Hero Image with Animation */}
       <img
-        className={`w-full h-[400px] sm:h-[500px] md:h-[600px] lg:h-[750px] object-cover ${
-          hasHeroImageLoaded ? "" : "animate-ken-burns"
-        }`}
+        className="w-full h-[400px] sm:h-[500px] md:h-[600px] lg:h-[750px] object-cover animate-ken-burns"
         src={heroPhoto}
         alt="Travel Adventure"
         loading="eager"

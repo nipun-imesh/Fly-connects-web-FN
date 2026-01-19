@@ -45,11 +45,11 @@ export default function TourListCard({ tour }: TourListCardProps) {
           goToDetails()
         }
       }}
-      className="group bg-white rounded-2xl overflow-hidden shadow-lg transition-all duration-300 cursor-pointer border border-gray-100 hover:border-red-300 hover:shadow-2xl hover:-translate-y-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2"
+      className="group bg-white rounded-2xl overflow-hidden shadow-xl transition-all duration-300 cursor-pointer border-2 border-gray-200 hover:border-red-400 hover:shadow-2xl hover:-translate-y-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2"
     >
       <div className="flex flex-col md:flex-row">
         {/* Left: Image slider */}
-        <div className="relative md:w-5/12 h-56 sm:h-64 md:h-auto md:min-h-[240px] bg-gray-900 overflow-hidden">
+        <div className="relative md:w-6/12 h-64 sm:h-72 md:h-auto md:min-h-[280px] bg-gray-900 overflow-hidden">
           <img
             src={currentImage}
             alt={`${tour.title} ${imageIndex + 1}`}
