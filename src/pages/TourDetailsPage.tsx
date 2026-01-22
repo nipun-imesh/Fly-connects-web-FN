@@ -499,7 +499,7 @@ export default function TourDetailsPage() {
                         className={`w-full px-6 py-3 font-semibold rounded-lg transition-all duration-300 shadow-lg ${
                           isSending
                             ? "bg-gray-300 text-gray-700 cursor-not-allowed"
-                            : "bg-gradient-to-r from-primary-600 to-primary-700 text-white hover:from-primary-700 hover:to-primary-800 hover:shadow-primary-500/30"
+                            : "bg-gradient-to-r from-red-600 to-orange-500 text-white hover:from-red-700 hover:to-orange-600 hover:shadow-xl"
                         }`}
                       >
                         {isSending ? "Sending..." : "Send Enquiry"}

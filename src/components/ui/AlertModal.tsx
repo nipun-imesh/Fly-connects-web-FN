@@ -52,7 +52,9 @@ export default function AlertModal({ open, config, onClose }: AlertModalProps) {
           {config.title}
         </h3>
 
-        <p className="text-gray-600 text-center mb-6">{config.message}</p>
+        <p className="text-gray-600 text-center mb-6 whitespace-pre-wrap max-h-48 overflow-auto">
+          {config.message}
+        </p>
 
         <div className="flex gap-3">
           {config.type === "confirm" ? (

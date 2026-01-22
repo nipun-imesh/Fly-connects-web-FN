@@ -1,18 +1,22 @@
-import { useState } from "react";
+import { useState } from "react"
+import type { ChangeEvent, FormEvent } from "react"
+import emailjs from "@emailjs/browser"
+import AlertModal from "../components/ui/AlertModal"
+import type { AlertModalConfig } from "../components/ui/AlertModal"
 
 interface FormData {
-  name: string;
-  email: string;
-  phone: string;
-  subject: string;
-  message: string;
+  name: string
+  email: string
+  phone: string
+  subject: string
+  message: string
 }
 
 interface FormErrors {
-  name?: string;
-  email?: string;
-  phone?: string;
-  message?: string;
+  name?: string
+  email?: string
+  phone?: string
+  message?: string
 }
 
 export default function ContactPage() {
@@ -21,66 +25,134 @@ export default function ContactPage() {
     email: "",
     phone: "",
     subject: "General Inquiry",
-    message: ""
-  });
+    message: "",
+  })
 
-  const [errors, setErrors] = useState<FormErrors>({});
-  const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
+  const [errors, setErrors] = useState<FormErrors>({})
+  const [isSending, setIsSending] = useState<boolean>(false)
+  const [showAlert, setShowAlert] = useState(false)
+  const [alertConfig, setAlertConfig] = useState<AlertModalConfig>({
+    title: "",
+    message: "",
+    type: "success",
+    onConfirm: undefined,
+  })
+
+  const emailJsServiceId = import.meta.env.VITE_EMAILJS_SERVICE_ID as string | undefined
+  const emailJsTemplateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID as string | undefined
+  const emailJsPublicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY as string | undefined
 
   const validateForm = (): boolean => {
-    const newErrors: FormErrors = {};
+    const newErrors: FormErrors = {}
 
     if (!formData.name.trim()) {
-      newErrors.name = "Name is required";
+      newErrors.name = "Name is required"
     }
 
     if (!formData.email.trim()) {
-      newErrors.email = "Email is required";
+      newErrors.email = "Email is required"
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = "Invalid email format";
+      newErrors.email = "Invalid email format"
     }
 
     if (!formData.phone.trim()) {
-      newErrors.phone = "Phone number is required";
+      newErrors.phone = "Phone number is required"
     } else if (!/^\+?[\d\s-()]{10,}$/.test(formData.phone)) {
-      newErrors.phone = "Invalid phone number";
+      newErrors.phone = "Invalid phone number"
     }
 
     if (!formData.message.trim()) {
-      newErrors.message = "Message is required";
+      newErrors.message = "Message is required"
     } else if (formData.message.trim().length < 10) {
-      newErrors.message = "Message must be at least 10 characters";
+      newErrors.message = "Message must be at least 10 characters"
     }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
 
-  const handleSubmit = (e: React.FormEvent): void => {
-    e.preventDefault();
-    
-    if (validateForm()) {
-      setIsSubmitted(true);
-      setTimeout(() => {
-        setFormData({
-          name: "",
-          email: "",
-          phone: "",
-          subject: "General Inquiry",
-          message: ""
-        });
-        setIsSubmitted(false);
-      }, 3000);
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
+    e.preventDefault()
+
+    if (!validateForm()) return
+
+    if (!emailJsServiceId || !emailJsTemplateId || !emailJsPublicKey) {
+      setAlertConfig({
+        title: "Email Not Configured",
+        message:
+          "Email sending is not configured. Please set VITE_EMAILJS_SERVICE_ID, VITE_EMAILJS_TEMPLATE_ID, and VITE_EMAILJS_PUBLIC_KEY.",
+        type: "error",
+        onConfirm: undefined,
+      })
+      setShowAlert(true)
+      return
     }
-  };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>): void => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setIsSending(true)
+
+    try {
+      await emailjs.send(
+        emailJsServiceId,
+        emailJsTemplateId,
+        {
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          date: "",
+          details: `Contact Message\nSubject: ${formData.subject}\n\n${formData.message}`,
+
+          // Optional (configure these in EmailJS template if you want)
+          from_name: formData.name,
+          reply_to: formData.email,
+        },
+        { publicKey: emailJsPublicKey },
+      )
+
+      setAlertConfig({
+        title: "Success!",
+        message: "Message sent successfully. We will get back to you shortly.",
+        type: "success",
+        onConfirm: undefined,
+      })
+      setShowAlert(true)
+
+      setFormData({
+        name: "",
+        email: "",
+        phone: "",
+        subject: "General Inquiry",
+        message: "",
+      })
+      setErrors({})
+    } catch (error: unknown) {
+      console.error("Contact email send failed:", error)
+
+      const errorText =
+        typeof error === "string"
+          ? error
+          : error instanceof Error
+            ? error.message
+            : JSON.stringify(error)
+
+      setAlertConfig({
+        title: "Failed",
+        message: `Failed to send message right now. Please try again.\n\n${errorText}`,
+        type: "error",
+        onConfirm: undefined,
+      })
+      setShowAlert(true)
+    } finally {
+      setIsSending(false)
+    }
+  }
+
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>): void => {
+    const { name, value } = e.target
+    setFormData((prev) => ({ ...prev, [name]: value }))
     if (errors[name as keyof FormErrors]) {
-      setErrors(prev => ({ ...prev, [name]: undefined }));
+      setErrors((prev) => ({ ...prev, [name]: undefined }))
     }
-  };
+  }
 
   const contactInfo = [
     {
@@ -98,10 +170,15 @@ export default function ContactPage() {
       title: "Email Us",
       details: ["info@traveltours.com", "support@traveltours.com"]
     }
-  ];
+  ]
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 pt-16 sm:pt-20 md:pt-24 pb-12 sm:pb-16 md:pb-20">
+      <AlertModal
+        open={showAlert}
+        config={alertConfig}
+        onClose={() => setShowAlert(false)}
+      />
       <div className="max-w-7xl mx-auto px-4 sm:px-5">
         {/* Header */}
         <div className="text-center mb-8 sm:mb-10 md:mb-12 animate-fade-in-up">
@@ -136,13 +213,6 @@ export default function ContactPage() {
           <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-5 sm:p-6 md:p-8 animate-slide-in-left">
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-5 sm:mb-6">Send us a Message</h2>
             
-            {isSubmitted && (
-              <div className="mb-6 p-4 bg-green-100 border-l-4 border-green-500 rounded">
-                <p className="text-green-700 font-semibold">Thank you for contacting us!</p>
-                <p className="text-green-600 text-sm">We'll get back to you shortly.</p>
-              </div>
-            )}
-
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* Name */}
               <div>
@@ -243,9 +313,14 @@ export default function ContactPage() {
               {/* Submit Button */}
               <button
                 type="submit"
-                className="w-full px-6 py-4 bg-gradient-to-r from-primary-600 to-primary-700 text-white font-semibold rounded-lg hover:from-primary-700 hover:to-primary-800 transform hover:scale-[1.02] transition-all duration-300 shadow-lg hover:shadow-primary-500/50"
+                disabled={isSending}
+                className={`w-full px-6 py-4 text-white font-semibold rounded-lg transform transition-all duration-300 shadow-lg ${
+                  isSending
+                    ? "bg-gray-300 text-gray-700 cursor-not-allowed"
+                    : "bg-gradient-to-r from-red-600 to-orange-500 hover:from-red-700 hover:to-orange-600 hover:shadow-xl hover:scale-[1.02]"
+                }`}
               >
-                Send Message
+                {isSending ? "Sending..." : "Send Message"}
               </button>
             </form>
           </div>

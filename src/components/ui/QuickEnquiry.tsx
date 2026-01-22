@@ -414,7 +414,7 @@ export default function QuickEnquiry() {
                     ? "bg-gray-300 text-gray-700 cursor-not-allowed"
                     : isSent
                       ? "bg-green-600 text-white cursor-not-allowed"
-                      : "bg-gradient-to-r from-primary-100 to-primary-200 text-black hover:from-primary-200 hover:to-primary-300 hover:shadow-primary-500/20"
+                      : "bg-gradient-to-r from-red-600 to-orange-500 text-white hover:from-red-700 hover:to-orange-600 hover:shadow-xl"
                 }`}
               >
                 {isSending ? "Sending..." : isSent ? "Sent" : "Send Enquiry"}
