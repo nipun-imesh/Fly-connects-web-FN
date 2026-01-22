@@ -1,46 +1,4 @@
-interface Stat {
-  value: string;
-  label: string;
-  icon: string;
-}
-
-interface Feature {
-  title: string;
-  description: string;
-  icon: string;
-}
-
 export default function About() {
-  const stats: Stat[] = [
-    { value: "15+", label: "Years Experience", icon: "🏆" },
-    { value: "50K+", label: "Happy Travelers", icon: "😊" },
-    { value: "150+", label: "Destinations", icon: "🌍" },
-    { value: "98%", label: "Satisfaction Rate", icon: "⭐" }
-  ];
-
-  const features: Feature[] = [
-    {
-      title: "Expert Guides",
-      description: "Our certified guides have decades of experience and deep local knowledge",
-      icon: "👨‍🏫"
-    },
-    {
-      title: "Best Prices",
-      description: "Competitive rates with no hidden fees and flexible payment options",
-      icon: "💰"
-    },
-    {
-      title: "24/7 Support",
-      description: "Round-the-clock customer service for peace of mind during your journey",
-      icon: "🛟"
-    },
-    {
-      title: "Safety First",
-      description: "Comprehensive insurance and safety protocols for worry-free adventures",
-      icon: "🔒"
-    }
-  ];
-
   return (
     <div className="relative py-12 sm:py-16 md:py-20 bg-gradient-to-br from-gray-50 via-white to-cyan-50 overflow-hidden">
       {/* Decorative Background Elements */}
@@ -51,7 +9,7 @@ export default function About() {
         {/* Header */}
         <div className="text-center mb-10 sm:mb-12 md:mb-16 animate-fade-in-up">
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-800 mb-3 sm:mb-4">
-            About <span className="text-cyan-500">Our Journey</span>
+            About <span className="text-red-600">Our Journey</span>
           </h2>
           <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-3xl mx-auto px-4">
             For over 15 years, we've been crafting unforgettable travel experiences that inspire, excite, and create lifelong memories
@@ -113,40 +71,6 @@ export default function About() {
               />
             </div>
           </div>
-        </div>
-
-        {/* Stats Section */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mb-10 sm:mb-12 md:mb-16">
-          {stats.map((stat, index) => (
-            <div 
-              key={index}
-              className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 text-center shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2"
-            >
-              <div className="text-3xl sm:text-4xl md:text-5xl mb-2 sm:mb-3">{stat.icon}</div>
-              <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-cyan-600 mb-1 sm:mb-2">{stat.value}</div>
-              <div className="text-xs sm:text-sm md:text-base text-gray-600 font-medium">{stat.label}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Features Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-          {features.map((feature, index) => (
-            <div 
-              key={index}
-              className="group bg-white rounded-xl sm:rounded-2xl p-5 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 hover:bg-gradient-to-br hover:from-cyan-50 hover:to-blue-50"
-            >
-              <div className="text-4xl sm:text-5xl mb-3 sm:mb-4 group-hover:scale-110 transition-transform duration-300">
-                {feature.icon}
-              </div>
-              <h4 className="text-lg sm:text-xl font-bold text-gray-800 mb-2 group-hover:text-cyan-600 transition-colors">
-                {feature.title}
-              </h4>
-              <p className="text-gray-600 text-xs sm:text-sm leading-relaxed">
-                {feature.description}
-              </p>
-            </div>
-          ))}
         </div>
       </div>
     </div>

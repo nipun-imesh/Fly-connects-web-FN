@@ -38,7 +38,15 @@ const isValidPhone = (phone: string): boolean => {
 }
 
 const sanitizeWhatsappNumber = (raw: string): string => {
-  return raw.replace(/\D/g, "")
+  const digitsOnly = raw.replace(/\D/g, "")
+
+  // WhatsApp wa.me requires international format.
+  // Sri Lanka mobiles are often entered as 07xxxxxxxx; convert to 94xxxxxxxxx.
+  if (digitsOnly.length === 10 && digitsOnly.startsWith("0")) {
+    return `94${digitsOnly.slice(1)}`
+  }
+
+  return digitsOnly
 }
 
 export default function OfferDetailsPage() {
