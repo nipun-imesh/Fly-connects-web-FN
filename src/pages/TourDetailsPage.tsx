@@ -520,7 +520,7 @@ export default function TourDetailsPage() {
                         aria-disabled={!whatsappHref}
                         className={`inline-flex w-full items-center justify-center px-6 py-3 font-semibold rounded-lg transition-all duration-300 shadow ${
                           whatsappHref
-                            ? "bg-gradient-to-r from-accent-600 to-accent-700 text-white hover:from-accent-700 hover:to-accent-800"
+                            ? "bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700 hover:shadow-xl"
                             : "bg-gray-200 text-gray-500 cursor-not-allowed"
                         }`}
                         onClick={(e) => {

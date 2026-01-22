@@ -177,7 +177,7 @@ export default function OfferDetailsPage() {
         {
           name: formData.name,
           email: formData.email,
-          phone: formData.phone,
+                    ? "bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700 hover:shadow-xl"
           date: formData.date,
           details: `Offer: ${offer.title}\n\n${formData.details}`,
         },
