@@ -3,6 +3,8 @@ import type { ChangeEvent, FormEvent } from "react"
 import { Link, useParams } from "react-router-dom"
 import emailjs from "@emailjs/browser"
 import Loader from "../components/ui/Loader"
+import AlertModal from "../components/ui/AlertModal"
+import type { AlertModalConfig } from "../components/ui/AlertModal"
 import usePreloadImages from "../hooks/usePreloadImages"
 import { getServiceById } from "../services/serviceData"
 
@@ -62,6 +64,13 @@ export default function OfferDetailsPage() {
   const [errors, setErrors] = useState<EnquiryFormErrors>({})
   const [isSending, setIsSending] = useState<boolean>(false)
   const [status, setStatus] = useState<SubmitStatus>({ state: "idle" })
+  const [showAlert, setShowAlert] = useState(false)
+  const [alertConfig, setAlertConfig] = useState<AlertModalConfig>({
+    title: "",
+    message: "",
+    type: "success",
+    onConfirm: undefined,
+  })
 
   const emailJsServiceId = import.meta.env.VITE_EMAILJS_SERVICE_ID as string | undefined
   const emailJsTemplateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID as string | undefined
@@ -169,6 +178,14 @@ export default function OfferDetailsPage() {
         },
       )
 
+      setAlertConfig({
+        title: "Success!",
+        message: "Enquiry sent successfully.",
+        type: "success",
+        onConfirm: undefined,
+      })
+      setShowAlert(true)
+
       setStatus({
         state: "success",
         message: "Enquiry sent successfully. We will get back to you shortly.",
@@ -219,6 +236,11 @@ export default function OfferDetailsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 pt-16 sm:pt-20 md:pt-24 pb-12 sm:pb-16">
+      <AlertModal
+        open={showAlert}
+        config={alertConfig}
+        onClose={() => setShowAlert(false)}
+      />
       <div className="max-w-7xl mx-auto px-4 sm:px-5">
         <div className="flex items-center justify-between mb-5">
           <Link

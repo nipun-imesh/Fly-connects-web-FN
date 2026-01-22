@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react"
 import type { ChangeEvent, FormEvent } from "react"
 import emailjs from "@emailjs/browser"
+import AlertModal from "./AlertModal"
+import type { AlertModalConfig } from "./AlertModal"
 
 interface QuickEnquiryFormData {
   name: string
@@ -36,7 +38,7 @@ const sanitizeWhatsappNumber = (raw: string): string => {
 }
 
 const buildWhatsappMessage = (data: QuickEnquiryFormData): string => {
-  const dateText = data.date ? data.date : "(not provided)"
+  const dateText = data.date || "(not provided)"
 
   return [
     "Quick Enquiry",
@@ -66,6 +68,13 @@ export default function QuickEnquiry() {
   const [errors, setErrors] = useState<QuickEnquiryFormErrors>({})
   const [isSending, setIsSending] = useState<boolean>(false)
   const [status, setStatus] = useState<SubmitStatus>({ state: "idle" })
+  const [showAlert, setShowAlert] = useState(false)
+  const [alertConfig, setAlertConfig] = useState<AlertModalConfig>({
+    title: "",
+    message: "",
+    type: "success",
+    onConfirm: undefined,
+  })
 
   const isSent = status.state === "success"
 
@@ -172,6 +181,14 @@ export default function QuickEnquiry() {
         },
       )
 
+      setAlertConfig({
+        title: "Success!",
+        message: "Enquiry sent successfully.",
+        type: "success",
+        onConfirm: undefined,
+      })
+      setShowAlert(true)
+
       setStatus({
         state: "success",
         message: "Enquiry sent successfully. We will get back to you shortly.",
@@ -198,6 +215,11 @@ export default function QuickEnquiry() {
 
   return (
     <div className="bg-gradient-to-br from-primary-50 via-white to-secondary-50 py-12 sm:py-16">
+      <AlertModal
+        open={showAlert}
+        config={alertConfig}
+        onClose={() => setShowAlert(false)}
+      />
       <div className="max-w-7xl mx-auto px-4 sm:px-5">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-10 md:gap-12 items-start">
           <div className="space-y-4 sm:space-y-6 animate-fade-in-up">

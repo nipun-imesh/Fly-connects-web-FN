@@ -3,6 +3,8 @@ import type { ChangeEvent, FormEvent } from "react"
 import { Link, useParams } from "react-router-dom"
 import emailjs from "@emailjs/browser"
 import Loader from "../components/ui/Loader"
+import AlertModal from "../components/ui/AlertModal"
+import type { AlertModalConfig } from "../components/ui/AlertModal"
 import usePreloadImages from "../hooks/usePreloadImages"
 import { getToursFromFirebase } from "../services/firebaseTourService"
 import type { Tour } from "../services/tourService"
@@ -91,6 +93,13 @@ export default function TourDetailsPage() {
   const [errors, setErrors] = useState<EnquiryFormErrors>({})
   const [isSending, setIsSending] = useState<boolean>(false)
   const [status, setStatus] = useState<SubmitStatus>({ state: "idle" })
+  const [showAlert, setShowAlert] = useState(false)
+  const [alertConfig, setAlertConfig] = useState<AlertModalConfig>({
+    title: "",
+    message: "",
+    type: "success",
+    onConfirm: undefined,
+  })
 
   const emailJsServiceId = import.meta.env.VITE_EMAILJS_SERVICE_ID as string | undefined
   const emailJsTemplateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID as string | undefined
@@ -154,6 +163,9 @@ export default function TourDetailsPage() {
     const message = [
       "Tour Enquiry",
       `Tour: ${tour.title}`,
+      `Location: ${tour.location}`,
+      `Duration: ${tour.duration}`,
+      `Price: ${tour.price}`,
       `Name: ${formData.name}`,
       `Email: ${formData.email}`,
       `Phone: ${formData.phone}`,
@@ -198,14 +210,25 @@ export default function TourDetailsPage() {
         emailJsTemplateId,
         {
           tour: tour.title,
+          tourLocation: tour.location,
+          tourDuration: tour.duration,
+          tourPrice: tour.price,
           name: formData.name,
           email: formData.email,
           phone: formData.phone,
           date: formData.date,
-          details: formData.details,
+          details: `Tour: ${tour.title}\nLocation: ${tour.location}\nDuration: ${tour.duration}\nPrice: ${tour.price}\n\n${formData.details}`,
         },
         { publicKey: emailJsPublicKey },
       )
+
+      setAlertConfig({
+        title: "Success!",
+        message: "Enquiry sent successfully.",
+        type: "success",
+        onConfirm: undefined,
+      })
+      setShowAlert(true)
 
       setStatus({
         state: "success",
@@ -260,6 +283,11 @@ export default function TourDetailsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 pt-16 sm:pt-20 md:pt-24 pb-12 sm:pb-16 md:pb-20">
+      <AlertModal
+        open={showAlert}
+        config={alertConfig}
+        onClose={() => setShowAlert(false)}
+      />
       <div className="max-w-7xl mx-auto px-4 sm:px-5">
         <Link
           to="/tours"

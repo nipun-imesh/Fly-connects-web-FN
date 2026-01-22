@@ -27,10 +27,20 @@ interface NewAdminData {
 
 let cachedDb: Firestore | null | undefined;
 
+const getApp = () => {
+  return getFirebaseApp();
+};
+
+const getAuthClient = () => {
+  const app = getApp();
+  if (!app) return null;
+  return getAuth(app);
+};
+
 const getDb = (): Firestore | null => {
   if (cachedDb !== undefined) return cachedDb;
 
-  const app = getFirebaseApp();
+  const app = getApp();
   if (!app) {
     cachedDb = null;
     return cachedDb;
@@ -48,9 +58,9 @@ export const registerAdmin = async (
 ): Promise<{ success: boolean; error?: string; adminId?: string }> => {
   try {
     const db = getDb();
-    const auth = getAuth();
+    const auth = getAuthClient();
 
-    if (!db) {
+    if (!db || !auth) {
       return {
         success: false,
         error: "Firebase is not configured.",
@@ -95,10 +105,10 @@ export const authenticateAdmin = async (
   credentials: AdminCredentials,
 ): Promise<{ success: boolean; error?: string }> => {
   try {
-    const auth = getAuth();
+    const auth = getAuthClient();
     const db = getDb();
 
-    if (!db) {
+    if (!db || !auth) {
       return {
         success: false,
         error: "Firebase is not configured.",
