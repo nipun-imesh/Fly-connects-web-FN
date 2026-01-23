@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { Navigate, useNavigate } from "react-router-dom"
 import { authenticateAdmin } from "../services/adminAuth"
 import Logo from "../assets/ajmal.jpg"
 
@@ -10,6 +10,12 @@ export default function AdminLoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [showAlert, setShowAlert] = useState(false)
   const [errorMessage, setErrorMessage] = useState("")
+
+  const isLoggedIn = localStorage.getItem("adminLoggedIn") === "true"
+
+  if (isLoggedIn) {
+    return <Navigate to="/admin/offers" replace />
+  }
 
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault()
@@ -209,20 +215,6 @@ export default function AdminLoginPage() {
               )}
             </button>
           </form>
-
-          {/* Register Link */}
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
-              Need to create an admin account?{" "}
-              <button
-                type="button"
-                onClick={() => navigate("/admin/register")}
-                className="text-red-600 hover:text-red-700 font-semibold transition-colors"
-              >
-                Register here
-              </button>
-            </p>
-          </div>
         </div>
       </div>
     </div>

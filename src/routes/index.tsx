@@ -7,6 +7,7 @@ import TourDetailsPage from "../pages/TourDetailsPage"
 import OfferDetailsPage from "../pages/OfferDetailsPage"
 import AdminLoginPage from "../pages/AdminLoginPage"
 import AdminRegisterPage from "../pages/AdminRegisterPage"
+import AdminChangePasswordPage from "../pages/AdminChangePasswordPage"
 import AdminLayout from "../pages/AdminLayout"
 import AdminOffersPage from "../pages/AdminOffersPage"
 import AdminToursPage from "../pages/AdminToursPage"
@@ -23,11 +24,12 @@ export default function AppRoutes() {
       
       {/* Admin Routes */}
       <Route path="/admin/login" element={<AdminLoginPage />} />
-      <Route path="/admin/register" element={<AdminRegisterPage />} />
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<Navigate to="/admin/offers" replace />} />
         <Route path="offers" element={<AdminOffersPage />} />
         <Route path="tours" element={<AdminToursPage />} />
+        <Route path="register" element={<AdminRegisterPage />} />
+        <Route path="change-password" element={<AdminChangePasswordPage />} />
       </Route>
       
       <Route path="*" element={<Navigate to="/" replace />} />

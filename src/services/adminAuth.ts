@@ -9,7 +9,15 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
+import {
+  EmailAuthProvider,
+  getAuth,
+  createUserWithEmailAndPassword,
+  reauthenticateWithCredential,
+  signInWithEmailAndPassword,
+  signOut,
+  updatePassword,
+} from "firebase/auth";
 import type { Firestore } from "firebase/firestore";
 import { getFirebaseApp } from "./firebase";
 
@@ -23,6 +31,11 @@ interface NewAdminData {
   password: string;
   email: string;
   role?: string;
+}
+
+interface ChangePasswordInput {
+  currentPassword: string
+  newPassword: string
 }
 
 let cachedDb: Firestore | null | undefined;
@@ -145,3 +158,75 @@ export const authenticateAdmin = async (
     };
   }
 };
+
+// -----------------------------
+// Change Admin Password
+// -----------------------------
+export const changeAdminPassword = async (
+  input: ChangePasswordInput,
+): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const auth = getAuthClient()
+    if (!auth) {
+      return { success: false, error: "Firebase is not configured." }
+    }
+
+    const user = auth.currentUser
+    if (!user || !user.email) {
+      return {
+        success: false,
+        error: "Please login again to change your password.",
+      }
+    }
+
+    const credential = EmailAuthProvider.credential(
+      user.email,
+      input.currentPassword,
+    )
+
+    await reauthenticateWithCredential(user, credential)
+    await updatePassword(user, input.newPassword)
+
+    return { success: true }
+  } catch (error: any) {
+    console.error("Admin password change error:", error)
+
+    const code = typeof error?.code === "string" ? error.code : ""
+    if (code === "auth/wrong-password") {
+      return { success: false, error: "Current password is incorrect." }
+    }
+    if (code === "auth/too-many-requests") {
+      return {
+        success: false,
+        error: "Too many attempts. Please try again later.",
+      }
+    }
+    if (code === "auth/requires-recent-login") {
+      return {
+        success: false,
+        error: "Please login again and then try changing your password.",
+      }
+    }
+
+    return {
+      success: false,
+      error: error?.message || "Password update failed.",
+    }
+  }
+}
+
+// -----------------------------
+// Logout Admin
+// -----------------------------
+export const logoutAdmin = async (): Promise<void> => {
+  localStorage.removeItem("adminLoggedIn")
+
+  try {
+    const auth = getAuthClient()
+    if (auth) {
+      await signOut(auth)
+    }
+  } catch (error) {
+    console.error("Admin logout error:", error)
+  }
+}

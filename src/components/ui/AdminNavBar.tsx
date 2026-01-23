@@ -1,11 +1,12 @@
 import { Link, useLocation, useNavigate } from "react-router-dom"
+import { logoutAdmin } from "../../services/adminAuth"
 
 export default function AdminNavBar() {
   const location = useLocation()
   const navigate = useNavigate()
 
-  const handleLogout = (): void => {
-    localStorage.removeItem("adminLoggedIn")
+  const handleLogout = async (): Promise<void> => {
+    await logoutAdmin()
     navigate("/admin/login")
   }
 
@@ -47,6 +48,26 @@ export default function AdminNavBar() {
               }`}
             >
               Tours
+            </Link>
+            <Link
+              to="/admin/register"
+              className={`text-sm font-semibold transition-colors ${
+                isActive("/admin/register")
+                  ? "text-primary-600"
+                  : "text-gray-700 hover:text-primary-500"
+              }`}
+            >
+              Register Admin
+            </Link>
+            <Link
+              to="/admin/change-password"
+              className={`text-sm font-semibold transition-colors ${
+                isActive("/admin/change-password")
+                  ? "text-primary-600"
+                  : "text-gray-700 hover:text-primary-500"
+              }`}
+            >
+              Change Password
             </Link>
             <button
               onClick={handleLogout}

@@ -47,6 +47,18 @@ export const getToursFromFirebase = async (): Promise<TourWithId[]> => {
       } as TourWithId);
     });
 
+    const getSortMillis = (tour: TourWithId): number => {
+      const maybeTour = tour as unknown as FirebaseTour;
+      const ts = maybeTour.updatedAt ?? maybeTour.createdAt;
+      if (!ts) return 0;
+      if (typeof (ts as unknown as { toMillis?: unknown }).toMillis === "function") {
+        return (ts as Timestamp).toMillis();
+      }
+      return 0;
+    };
+
+    tours.sort((a, b) => getSortMillis(b) - getSortMillis(a));
+
     return tours;
   } catch (error) {
     console.error("Error fetching tours from Firebase:", error);
