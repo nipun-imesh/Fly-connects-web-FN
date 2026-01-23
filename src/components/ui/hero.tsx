@@ -58,7 +58,7 @@ export default function Hero() {
             <div className="flex flex-wrap gap-3 sm:gap-4">
               <button 
                 onClick={() => navigate("/tours")}
-                className="px-4 py-2 sm:px-6 sm:py-3 md:px-8 md:py-4 text-red-600 text-white text-sm sm:text-base font-semibold rounded-lg hover:bg-cyan-600 transform hover:scale-105 transition duration-300 shadow-lg hover:shadow-primary-500/50"
+                className="px-4 py-2 sm:px-6 sm:py-3 md:px-8 md:py-4 bg-red-500 text-white text-sm sm:text-base font-semibold rounded-lg hover:bg-red-600 transform hover:scale-105 transition duration-300 shadow-lg hover:shadow-primary-500/50"
               >
                 Explore Tours
               </button>
