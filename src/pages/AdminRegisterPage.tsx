@@ -2,7 +2,6 @@ import { useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { registerAdmin } from "../services/adminAuth";
-import Logo from "../assets/ajmal.jpg";
 
 interface AdminFormData {
   username: string;
