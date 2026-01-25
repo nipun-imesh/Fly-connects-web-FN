@@ -18,7 +18,7 @@ export default function DataCard() {
           ...offer,
           id: index + 1
         }))
-        setOffers(offersWithIds)
+        setOffers(offersWithIds.slice(0, 4))
       } catch (error) {
         console.error("Error loading offers:", error)
       } finally {
