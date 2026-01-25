@@ -313,7 +313,7 @@ export default function QuickEnquiry() {
                     className={`w-full px-4 py-3 rounded-lg border-2 ${
                       errors.name ? "border-red-500" : "border-gray-200"
                     } focus:border-primary-500 focus:outline-none transition`}
-                    placeholder="John Doe"
+                    placeholder="Full Name"
                   />
                   {errors.name && (
                     <p className="text-red-500 text-sm mt-1">{errors.name}</p>
@@ -336,7 +336,7 @@ export default function QuickEnquiry() {
                     className={`w-full px-4 py-3 rounded-lg border-2 ${
                       errors.email ? "border-red-500" : "border-gray-200"
                     } focus:border-primary-500 focus:outline-none transition`}
-                    placeholder="john@example.com"
+                    placeholder="email@example.com"
                   />
                   {errors.email && (
                     <p className="text-red-500 text-sm mt-1">{errors.email}</p>
@@ -361,7 +361,7 @@ export default function QuickEnquiry() {
                     className={`w-full px-4 py-3 rounded-lg border-2 ${
                       errors.phone ? "border-red-500" : "border-gray-200"
                     } focus:border-primary-500 focus:outline-none transition`}
-                    placeholder="+1 (555) 123-4567"
+                    placeholder="Phone Number"
                   />
                   {errors.phone && (
                     <p className="text-red-500 text-sm mt-1">{errors.phone}</p>

@@ -3,6 +3,9 @@ import type { ChangeEvent, FormEvent } from "react"
 import emailjs from "@emailjs/browser"
 import AlertModal from "../components/ui/AlertModal"
 import type { AlertModalConfig } from "../components/ui/AlertModal"
+import fbIcon from "../assets/fb.png";
+import tiktokIcon from "../assets/tiktok.png";
+
 
 interface FormData {
   name: string
@@ -158,17 +161,17 @@ export default function ContactPage() {
     {
       icon: "📍",
       title: "Visit Us",
-      details: ["123 Travel Street", "Adventure City, AC 12345"]
+      details: ["No:28, Negombo Road, Kurunegala, Sri Lanka"]
     },
     {
       icon: "📞",
       title: "Call Us",
-      details: ["+1 (555) 123-4567", "Mon-Fri: 9AM - 6PM"]
+      details: ["+94 77 042 6007", "+94 37 713 3535", "Mon-Fri: 9AM - 6PM"]
     },
     {
       icon: "📧",
       title: "Email Us",
-      details: ["info@traveltours.com", "support@traveltours.com"]
+      details: ["Theflyconnects@gmail.com"]
     }
   ]
 
@@ -228,7 +231,7 @@ export default function ContactPage() {
                   className={`w-full px-4 py-3 rounded-lg border-2 ${
                     errors.name ? 'border-red-500' : 'border-gray-200'
                   } focus:border-primary-500 focus:outline-none transition`}
-                  placeholder="John Doe"
+                  placeholder="Full Name"
                 />
                 {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
               </div>
@@ -247,7 +250,7 @@ export default function ContactPage() {
                   className={`w-full px-4 py-3 rounded-lg border-2 ${
                     errors.email ? 'border-red-500' : 'border-gray-200'
                   } focus:border-primary-500 focus:outline-none transition`}
-                  placeholder="john@example.com"
+                  placeholder="email@gmail.com"
                 />
                 {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
               </div>
@@ -266,7 +269,7 @@ export default function ContactPage() {
                   className={`w-full px-4 py-3 rounded-lg border-2 ${
                     errors.phone ? 'border-red-500' : 'border-gray-200'
                   } focus:border-primary-500 focus:outline-none transition`}
-                  placeholder="+1 (555) 123-4567"
+                  placeholder="+94 11 222 3333"
                 />
                 {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
               </div>
@@ -343,14 +346,24 @@ export default function ContactPage() {
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-5 sm:p-6 md:p-8">
               <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">Follow Us</h3>
               <div className="flex space-x-3 sm:space-x-4">
-                {['facebook', 'twitter', 'instagram', 'linkedin'].map((social) => (
-                  <button
-                    key={social}
-                    className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white text-sm sm:text-base hover:from-primary-600 hover:to-primary-700 transform hover:scale-110 transition-all duration-300 shadow-lg"
-                  >
-                    {social[0].toUpperCase()}
-                  </button>
-                ))}
+                <a
+                  href="https://web.facebook.com/people/The-Fly-Connects/100090108482861/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Facebook"
+                >
+                  <img src={fbIcon} alt="Facebook" className="w-8 h-8" />
+
+                </a>
+                <a
+                  href="https://www.tiktok.com/@theflyconnects"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  
+                  title="TikTok"
+                >
+                  <img src={tiktokIcon} alt="TikTok" className="w-8 h-8" />
+                </a>
               </div>
             </div>
           </div>
