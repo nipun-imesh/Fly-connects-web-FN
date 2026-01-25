@@ -3,6 +3,7 @@ import OffersMiniGrid from "../components/ui/OffersMiniGrid"
 import ToursGrid from "../components/ui/ToursGrid"
 import { getOutboundDestination } from "../services/tourService"
 import { getToursFromFirebase } from "../services/firebaseTourService"
+import { updatePageSEO } from "../services/seoService"
 import type { Tour } from "../services/tourService"
 
 type TourTypeFilter = Tour["tourType"] | "All" | "Offer"
@@ -120,6 +121,15 @@ export default function ToursPage() {
   const [selectedInboundDuration, setSelectedInboundDuration] = useState<string>("All")
   const [tours, setTours] = useState<Tour[]>([])
   const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    updatePageSEO({
+      title: "Explore Our Tours - FlyConnect Travel Packages",
+      description: "Browse our extensive collection of inbound and outbound tours. Discover special travel packages and book your next adventure with FlyConnect.",
+      keywords: "tours, travel packages, inbound tours, outbound tours, tour booking, travel deals",
+      url: "https://flyconnects.com/tours",
+    })
+  }, [])
 
   useEffect(() => {
     const loadTours = async () => {

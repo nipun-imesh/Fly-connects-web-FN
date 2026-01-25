@@ -1,6 +1,17 @@
 import About from "../components/ui/about";
 
+import { useEffect } from "react"
+import { updatePageSEO } from "../services/seoService"
+
 export default function AboutPage() {
+  useEffect(() => {
+    updatePageSEO({
+      title: "About FlyConnect - Travel Agency & Tour Operators",
+      description: "Learn about FlyConnect's mission to provide exceptional travel experiences. Discover our story, values, and commitment to quality tours.",
+      keywords: "about FlyConnect, travel agency, tour operators, Sri Lanka travel",
+      url: "https://flyconnects.com/about",
+    })
+  }, [])
   return (
     <div className="pt-14 sm:pt-[70px] md:pt-20">
       <About />

@@ -1,7 +1,9 @@
 import { useState } from "react"
 import type { ChangeEvent, FormEvent } from "react"
 import emailjs from "@emailjs/browser"
+import { useEffect } from "react"
 import AlertModal from "../components/ui/AlertModal"
+import { updatePageSEO } from "../services/seoService"
 import type { AlertModalConfig } from "../components/ui/AlertModal"
 import fbIcon from "../assets/fb.png";
 import tiktokIcon from "../assets/tiktok.png";
@@ -23,6 +25,15 @@ interface FormErrors {
 }
 
 export default function ContactPage() {
+  useEffect(() => {
+    updatePageSEO({
+      title: "Contact FlyConnect - Get in Touch with Our Travel Experts",
+      description: "Contact FlyConnect for travel inquiries, bookings, and support. Call +94 77 042 6007 or send us an email. We're here to help!",
+      keywords: "contact FlyConnect, travel support, tour booking, customer service",
+      url: "https://flyconnects.com/contact",
+    })
+  }, [])
+
   const [formData, setFormData] = useState<FormData>({
     name: "",
     email: "",
