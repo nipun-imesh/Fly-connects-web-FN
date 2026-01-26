@@ -7,18 +7,18 @@ import { updatePageSEO, addStructuredData } from "../services/seoService"
 export default function HomePage() {
   useEffect(() => {
     updatePageSEO({
-      title: "FlyConnect - Best Tour & Travel Packages in Sri Lanka",
-      description: "Discover unforgettable travel experiences with FlyConnect. Explore inbound and outbound tours, special offers, and travel packages. Book your adventure today!",
-      keywords: "tours, travel packages, Sri Lanka tours, outbound tours, inbound tours, travel deals, vacation packages",
-      url: "https://flyconnects.com/",
+      title: "The Fly Connects - Best Tour & Travel Packages in Sri Lanka | Inbound & Outbound Tours",
+      description: "Discover unforgettable travel experiences with The Fly Connects. Explore inbound Sri Lanka tours, outbound international tours, special offers, and customized travel packages. Expert tour operators based in Kurunegala.",
+      keywords: "tours, travel packages, Sri Lanka tours, outbound tours, inbound tours, travel deals, vacation packages, The Fly Connects",
+      url: "https://theflyconnects.com/",
     })
 
     addStructuredData({
       "@context": "https://schema.org",
       "@type": "Organization",
-      "name": "FlyConnect",
-      "url": "https://flyconnects.com/",
-      "logo": "https://flyconnects.com/flyconnectLogo.png",
+      "name": "The Fly Connects",
+      "url": "https://theflyconnects.com/",
+      "logo": "https://theflyconnects.com/flyconnectLogo.png",
       "sameAs": [
         "https://web.facebook.com/people/The-Fly-Connects/100090108482861/",
         "https://www.tiktok.com/@theflyconnects"

@@ -27,10 +27,10 @@ interface FormErrors {
 export default function ContactPage() {
   useEffect(() => {
     updatePageSEO({
-      title: "Contact FlyConnect - Get in Touch with Our Travel Experts",
-      description: "Contact FlyConnect for travel inquiries, bookings, and support. Call +94 77 042 6007 or send us an email. We're here to help!",
-      keywords: "contact FlyConnect, travel support, tour booking, customer service",
-      url: "https://flyconnects.com/contact",
+      title: "Contact The Fly Connects - Get in Touch with Our Travel Experts",
+      description: "Contact The Fly Connects for travel inquiries, bookings, and support. Call +94 77 042 6007 or send us an email. We're here to help!",
+      keywords: "contact The Fly Connects, travel support, tour booking, customer service",
+      url: "https://theflyconnects.com/contact",
     })
   }, [])
 

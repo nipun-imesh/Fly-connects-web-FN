@@ -124,10 +124,10 @@ export default function ToursPage() {
 
   useEffect(() => {
     updatePageSEO({
-      title: "Explore Our Tours - FlyConnect Travel Packages",
-      description: "Browse our extensive collection of inbound and outbound tours. Discover special travel packages and book your next adventure with FlyConnect.",
+      title: "Explore Our Tours - The Fly Connects Travel Packages",
+      description: "Browse our extensive collection of inbound and outbound tours. Discover special travel packages and book your next adventure with The Fly Connects.",
       keywords: "tours, travel packages, inbound tours, outbound tours, tour booking, travel deals",
-      url: "https://flyconnects.com/tours",
+      url: "https://theflyconnects.com/tours",
     })
   }, [])
 

@@ -6,10 +6,10 @@ import { updatePageSEO } from "../services/seoService"
 export default function AboutPage() {
   useEffect(() => {
     updatePageSEO({
-      title: "About FlyConnect - Travel Agency & Tour Operators",
-      description: "Learn about FlyConnect's mission to provide exceptional travel experiences. Discover our story, values, and commitment to quality tours.",
-      keywords: "about FlyConnect, travel agency, tour operators, Sri Lanka travel",
-      url: "https://flyconnects.com/about",
+      title: "About The Fly Connects - Travel Agency & Tour Operators",
+      description: "Learn about The Fly Connects mission to provide exceptional travel experiences. Discover our story, values, and commitment to quality tours.",
+      keywords: "about The Fly Connects, travel agency, tour operators, Sri Lanka travel",
+      url: "https://theflyconnects.com/about",
     })
   }, [])
   return (
