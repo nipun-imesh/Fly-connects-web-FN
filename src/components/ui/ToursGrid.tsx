@@ -26,11 +26,11 @@ export default function ToursGrid({ tours, tourType, subTour, duration, offerOnl
       if (tourType === "Outbound") {
         next = next.filter((tour) => getOutboundDestination(tour) === subTour)
       } else if (tourType === "Inbound") {
-        next = next.filter((tour) => tour.location === subTour)
+        next = next.filter((tour) => tour.subTour === subTour)
       } else {
         // When no tour type is selected, filter across both Outbound and Inbound
         next = next.filter((tour) => 
-          getOutboundDestination(tour) === subTour || tour.location === subTour
+          getOutboundDestination(tour) === subTour || tour.subTour === subTour
         )
       }
     }

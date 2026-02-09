@@ -39,11 +39,11 @@ export default function TourListCard({ tour }: TourListCardProps) {
           goToDetails()
         }
       }}
-      className="group bg-white rounded-2xl overflow-hidden shadow-xl transition-all duration-300 cursor-pointer border-2 border-gray-200 hover:border-red-400 hover:shadow-2xl hover:-translate-y-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2"
+      className="group bg-white rounded-2xl overflow-hidden shadow-xl transition-all duration-300 cursor-pointer border-2 border-gray-200 hover:border-red-400 hover:shadow-2xl hover:-translate-y-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 h-full md:h-80 flex flex-col"
     >
-      <div className="flex flex-col md:flex-row">
+      <div className="flex flex-col md:flex-row h-full">
         {/* Left: Image slider */}
-        <div className="relative md:w-6/12 h-64 sm:h-72 md:h-auto md:min-h-[280px] bg-gray-900 overflow-hidden">
+        <div className="relative md:w-6/12 h-64 sm:h-72 md:h-full bg-gray-900 overflow-hidden shrink-0">
           <img
             src={currentImage}
             alt={`${tour.title} ${imageIndex + 1}`}
@@ -117,7 +117,7 @@ export default function TourListCard({ tour }: TourListCardProps) {
           </div>
         </div>
         {/* Right: Details */}
-        <div className="flex-1 p-5 sm:p-6">
+        <div className="flex-1 p-5 sm:p-6 flex flex-col">
           <div className="flex items-start justify-between gap-4">
             <div>
               <h3 className="text-xl sm:text-2xl font-bold text-gray-900">
@@ -149,7 +149,7 @@ export default function TourListCard({ tour }: TourListCardProps) {
             {tour.description}
           </p>
 
-          <div className="mt-5 flex flex-wrap items-center gap-3">
+          <div className="mt-auto pt-5 flex flex-wrap items-center gap-3">
             <span className="inline-flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700">
               <svg
                 className="w-4 h-4"

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react"
+import Loader from "../components/ui/Loader"
 import OffersMiniGrid from "../components/ui/OffersMiniGrid"
 import ToursGrid from "../components/ui/ToursGrid"
 import { getOutboundDestination } from "../services/tourService"
@@ -166,7 +167,9 @@ export default function ToursPage() {
     tours
       .filter((tour) => tour.tourType === "Inbound")
       .forEach((tour) => {
-        options.add(tour.location)
+        if (tour.subTour && tour.subTour.trim() !== "") {
+          options.add(tour.subTour)
+        }
       })
     return ["All", ...Array.from(options)]
   }, [tours])
@@ -253,9 +256,7 @@ export default function ToursPage() {
         {selectedTourType === "Offer" && <OffersMiniGrid />}
 
         {loading ? (
-          <div className="flex justify-center items-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-          </div>
+          <Loader fullScreen={false} label="Loading tours..." />
         ) : (
           <ToursGrid
             tours={tours}

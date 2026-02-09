@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
+import Loader from "./Loader"
 import { getToursFromFirebase } from "../../services/firebaseTourService"
 import type { Tour } from "../../services/tourService"
 
@@ -45,9 +46,7 @@ export default function DataCard() {
         </div>
 
         {loading ? (
-          <div className="flex justify-center items-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-          </div>
+          <Loader fullScreen={false} label="Loading offers..." />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8">
             {offers.map((offer) => (
