@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import Loader from "../components/ui/Loader"
-import type { Tour, ItineraryItem } from "../services/tourService"
+import type { Tour } from "../services/tourService"
 import { getToursFromFirebase, addTourToFirebase, updateTourInFirebase, deleteTourFromFirebase } from "../services/firebaseTourService"
 import { uploadImageToCloudinary, uploadBase64ToCloudinary } from "../services/cloudinary"
 

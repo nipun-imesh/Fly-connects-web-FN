@@ -7,7 +7,6 @@ import AlertModal from "../components/ui/AlertModal"
 import type { AlertModalConfig } from "../components/ui/AlertModal"
 import usePreloadImages from "../hooks/usePreloadImages"
 import { getToursFromFirebase } from "../services/firebaseTourService"
-import { getServiceById } from "../services/serviceData"
 import type { Tour } from "../services/tourService"
 
 interface EnquiryFormData {
