@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import Loader from "../components/ui/Loader"
 import type { Tour } from "../services/tourService"
 import { getToursFromFirebase, addTourToFirebase, updateTourInFirebase, deleteTourFromFirebase } from "../services/firebaseTourService"
 import { uploadImageToCloudinary, uploadBase64ToCloudinary } from "../services/cloudinary"
@@ -22,6 +23,7 @@ export default function AdminOffersPage() {
   const [offerIdMap, setOfferIdMap] = useState<Map<number, string>>(new Map())
   const [durationDays, setDurationDays] = useState("")
   const [durationNights, setDurationNights] = useState("")
+  const [loading, setLoading] = useState(true)
 
   const [formData, setFormData] = useState<Omit<Tour, "id">>({
     title: "",
@@ -69,6 +71,8 @@ export default function AdminOffersPage() {
         onConfirm: () => setShowAlert(false)
       })
       setShowAlert(true)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -380,6 +384,10 @@ export default function AdminOffersPage() {
       }
       reader.readAsDataURL(file)
     }
+  }
+
+  if (loading) {
+    return <Loader label="Loading offers management..." />
   }
 
   return (

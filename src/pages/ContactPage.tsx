@@ -177,12 +177,17 @@ export default function ContactPage() {
     {
       icon: "📞",
       title: "Call Us",
-      details: ["+94 77 042 6007", "+94 37 713 3535", "Mon-Fri: 9AM - 6PM"]
+      details: ["+94 77 042 6007", "+94 37 713 3535"]
     },
     {
       icon: "📧",
       title: "Email Us",
       details: ["Theflyconnects@gmail.com"]
+    },
+    {
+      icon: "🕒",
+      title: "Opening Hours",
+      details: ["Mon - Fri: 8:30 AM - 5:30 PM", "Sat: 8:30 AM - 1:30 PM"]
     }
   ]
 
@@ -205,7 +210,7 @@ export default function ContactPage() {
         </div>
 
         {/* Contact Info Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-8 sm:mb-10 md:mb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8 sm:mb-10 md:mb-12">
           {contactInfo.map((info, index) => (
             <div
               key={index}

@@ -208,6 +208,10 @@ export default function ToursPage() {
     return inboundDurations.map((duration) => ({ label: duration, value: duration }))
   }, [inboundDurations])
 
+  if (loading) {
+    return <Loader label="Loading tours..." />
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 pt-16 sm:pt-20 md:pt-24 pb-12 sm:pb-16 md:pb-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-5">
@@ -255,17 +259,13 @@ export default function ToursPage() {
 
         {selectedTourType === "Offer" && <OffersMiniGrid />}
 
-        {loading ? (
-          <Loader fullScreen={false} label="Loading tours..." />
-        ) : (
-          <ToursGrid
-            tours={tours}
-            tourType={selectedTourType === "All" || selectedTourType === "Offer" ? undefined : selectedTourType}
-            offerOnly={selectedTourType === "Offer"}
-            subTour={selectedSubTour === "All" ? undefined : selectedSubTour}
-            duration={selectedInboundDuration === "All" ? undefined : selectedInboundDuration}
-          />
-        )}
+        <ToursGrid
+          tours={tours}
+          tourType={selectedTourType === "All" || selectedTourType === "Offer" ? undefined : selectedTourType}
+          offerOnly={selectedTourType === "Offer"}
+          subTour={selectedSubTour === "All" ? undefined : selectedSubTour}
+          duration={selectedInboundDuration === "All" ? undefined : selectedInboundDuration}
+        />
       </div>
     </div>
   )

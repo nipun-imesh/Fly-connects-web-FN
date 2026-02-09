@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import Loader from "../components/ui/Loader"
 import type { Tour } from "../services/tourService"
 import { getToursFromFirebase, addTourToFirebase, updateTourInFirebase, deleteTourFromFirebase } from "../services/firebaseTourService"
 import { uploadImageToCloudinary, uploadBase64ToCloudinary } from "../services/cloudinary"
@@ -19,6 +20,7 @@ export default function AdminToursPage() {
   const [tourIdMap, setTourIdMap] = useState<Map<number, string>>(new Map())
   const [durationDays, setDurationDays] = useState("")
   const [durationNights, setDurationNights] = useState("")
+  const [loading, setLoading] = useState(true)
 
   const [formData, setFormData] = useState<Omit<Tour, "id">>({
     title: "",
@@ -66,6 +68,8 @@ export default function AdminToursPage() {
         onConfirm: () => setShowAlert(false)
       })
       setShowAlert(true)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -372,6 +376,10 @@ export default function AdminToursPage() {
       }
       reader.readAsDataURL(file)
     }
+  }
+
+  if (loading) {
+    return <Loader label="Loading tours management..." />
   }
 
   return (
