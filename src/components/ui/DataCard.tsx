@@ -80,7 +80,7 @@ export default function DataCard() {
 
                   {/* Offer Badge */}
                   <div className="absolute bottom-3 right-3 bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
-                    Rs {offer.price}
+                    {offer.currency || "Rs"} {offer.price}
                   </div>
                 </div>
 

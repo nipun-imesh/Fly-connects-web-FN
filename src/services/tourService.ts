@@ -3,6 +3,7 @@ export interface Tour {
   title: string
   location: string
   price: string
+  currency: 'LKR' | 'USD'
   duration: string
   description: string
   images: string[]

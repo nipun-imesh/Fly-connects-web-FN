@@ -3,26 +3,31 @@ import type { Tour } from "../services/tourService"
 import { getToursFromFirebase, addTourToFirebase, updateTourInFirebase, deleteTourFromFirebase } from "../services/firebaseTourService"
 import { uploadImageToCloudinary, uploadBase64ToCloudinary } from "../services/cloudinary"
 
+const MAX_IMAGES = 8
+
 export default function AdminToursPage() {
   const [tours, setTours] = useState<Tour[]>([])
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingTour, setEditingTour] = useState<Tour | null>(null)
-  const [imagePreviews, setImagePreviews] = useState<string[]>(["", "", "", ""])
-  const [imageFiles, setImageFiles] = useState<(File | null)[]>([null, null, null, null])
+  const [imagePreviews, setImagePreviews] = useState<string[]>(Array(MAX_IMAGES).fill(""))
+  const [imageFiles, setImageFiles] = useState<(File | null)[]>(Array(MAX_IMAGES).fill(null))
   const [showAlert, setShowAlert] = useState(false)
   const [alertConfig, setAlertConfig] = useState({ title: "", message: "", type: "success" as "success" | "error" | "confirm", onConfirm: (() => {}) as () => void })
   const [newInclusion, setNewInclusion] = useState("")
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState("")
   const [tourIdMap, setTourIdMap] = useState<Map<number, string>>(new Map())
+  const [durationDays, setDurationDays] = useState("")
+  const [durationNights, setDurationNights] = useState("")
 
   const [formData, setFormData] = useState<Omit<Tour, "id">>({
     title: "",
     location: "",
     price: "", // <-- changed from 0 to empty string
+    currency: "LKR",
     duration: "",
     description: "",
-    images: ["", "", "", ""],
+    images: Array(MAX_IMAGES).fill(""),
     inclusions: [],
     tourType: "Outbound",
     subTour: ""
@@ -69,10 +74,13 @@ export default function AdminToursPage() {
     
     // Validate images
     const hasAllImages = formData.images.every(img => img.trim() !== "") || imageFiles.some(file => file !== null)
-    if (!hasAllImages) {
+    // Relaxed validation: require at least one image if none are present in formData
+    const hasAtLeastOneImage = formData.images.some(img => img.trim() !== "") || imageFiles.some(file => file !== null)
+    
+    if (!hasAtLeastOneImage) {
       setAlertConfig({
         title: "Missing Images",
-        message: "Please provide all 4 tour images before submitting.",
+        message: "Please provide at least one tour image before submitting.",
         type: "error",
         onConfirm: () => setShowAlert(false)
       })
@@ -98,14 +106,14 @@ export default function AdminToursPage() {
       // Upload images to Cloudinary
       const uploadedImageUrls: string[] = []
       
-      for (let i = 0; i < 4; i++) {
-        setUploadProgress(`Uploading image ${i + 1} of 4...`)
+      for (let i = 0; i < MAX_IMAGES; i++) {
+        setUploadProgress(`Uploading image ${i + 1} of ${MAX_IMAGES}...`)
         
         if (imageFiles[i]) {
           // Upload file to Cloudinary
           const url = await uploadImageToCloudinary(imageFiles[i]!)
           uploadedImageUrls.push(url)
-        } else if (formData.images[i]) {
+        } else if (formData.images[i] && formData.images[i].trim() !== "") {
           // Check if it's a base64 image
           if (formData.images[i].startsWith("data:image")) {
             const url = await uploadBase64ToCloudinary(formData.images[i])
@@ -200,18 +208,38 @@ export default function AdminToursPage() {
 
   const handleEdit = (tour: Tour): void => {
     setEditingTour(tour)
+    
+    // Parse duration string e.g., "7D 6N" or "7 Days"
+    const durationMatch = tour.duration.match(/(\d+)\s*D\s*(\d+)\s*N/)
+    if (durationMatch) {
+      setDurationDays(durationMatch[1])
+      setDurationNights(durationMatch[2])
+    } else {
+      // Fallback for old format "7 Days"
+      const daysMatch = tour.duration.match(/(\d+)/)
+      setDurationDays(daysMatch ? daysMatch[1] : "")
+      setDurationNights("")
+    }
+
+    // Pad images to MAX_IMAGES
+    const paddedImages = [...tour.images]
+    while (paddedImages.length < MAX_IMAGES) paddedImages.push("")
+      
     setFormData({
       title: tour.title,
       location: tour.location,
       price: tour.price,
+      currency: tour.currency || "LKR",
       duration: tour.duration,
       description: tour.description,
-      images: tour.images,
+      images: paddedImages,
       inclusions: tour.inclusions,
       tourType: tour.tourType,
       subTour: tour.subTour || ""
     })
-    setImagePreviews(tour.images)
+    setImagePreviews(paddedImages)
+    // Reset file inputs
+    setImageFiles(Array(MAX_IMAGES).fill(null))
     setIsModalOpen(true)
   }
 
@@ -222,20 +250,40 @@ export default function AdminToursPage() {
   const closeModal = (): void => {
     setIsModalOpen(false)
     setEditingTour(null)
-    setImagePreviews(["", "", "", ""])
-    setImageFiles([null, null, null, null])
+    setImagePreviews(Array(MAX_IMAGES).fill(""))
+    setImageFiles(Array(MAX_IMAGES).fill(null))
     setNewInclusion("")
+    setDurationDays("")
+    setDurationNights("")
     setFormData({
       title: "",
       location: "",
       price: "",
+      currency: "LKR",
       duration: "",
       description: "",
-      images: ["", "", "", ""],
+      images: Array(MAX_IMAGES).fill(""),
       inclusions: [],
       tourType: "Outbound",
       subTour: ""
     })
+  }
+
+  const handleDurationChange = (type: "days" | "nights", value: string) => {
+    let d = type === "days" ? value : durationDays
+    let n = type === "nights" ? value : durationNights
+
+    if (type === "days") setDurationDays(value)
+    if (type === "nights") setDurationNights(value)
+
+    let newDuration = ""
+    if (d && n) {
+      newDuration = `${d}D ${n}N`
+    } else if (d) {
+      newDuration = `${d} Days`
+    }
+    
+    setFormData(prev => ({ ...prev, duration: newDuration }))
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>): void => {
@@ -250,6 +298,10 @@ export default function AdminToursPage() {
       setImagePreviews(newPreviews)
     } else if (name === "price") {
       setFormData({ ...formData, [name]: value })
+    } else if (name === "title" || name === "location") {
+      // Capitalize first letter of the string
+      const capitalizedValue = value.length > 0 ? value.charAt(0).toUpperCase() + value.slice(1) : value
+      setFormData({ ...formData, [name]: capitalizedValue })
     } else {
       setFormData({ ...formData, [name]: value })
     }
@@ -378,7 +430,7 @@ export default function AdminToursPage() {
               <div className="grid grid-cols-3 gap-2 mb-3 pb-3 border-b border-gray-200">
                 <div className="text-center">
                   <div className="text-xs text-gray-500 mb-1">Price</div>
-                  <div className="text-sm font-bold text-primary-600">Rs {tour.price}</div>
+                  <div className="text-sm font-bold text-primary-600">{tour.currency || "Rs"} {tour.price}</div>
                 </div>
                 <div className="text-center border-l border-r border-gray-200">
                   <div className="text-xs text-gray-500 mb-1">Duration</div>
@@ -463,28 +515,56 @@ export default function AdminToursPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Price</label>
-                  <input
-                    type="number"
-                    name="price"
-                    value={formData.price}
-                    onChange={handleChange}
-                    required
-                    min="0"
-                    className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-primary-500 focus:outline-none"
-                  />
+                  <div className="flex gap-2">
+                    <select
+                      name="currency"
+                      value={formData.currency}
+                      onChange={handleChange}
+                      className="px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-primary-500 focus:outline-none bg-white"
+                    >
+                      <option value="LKR">LKR</option>
+                      <option value="USD">USD</option>
+                    </select>
+                    <input
+                      type="number"
+                      name="price"
+                      value={formData.price}
+                      onChange={handleChange}
+                      required
+                      min="0"
+                      className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-primary-500 focus:outline-none"
+                    />
+                  </div>
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Duration</label>
-                  <input
-                    type="text"
-                    name="duration"
-                    value={formData.duration}
-                    onChange={handleChange}
-                    required
-                    placeholder="e.g., 7 Days"
-                    className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-primary-500 focus:outline-none"
-                  />
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <input
+                        type="number"
+                        min="1"
+                        value={durationDays}
+                        onChange={(e) => handleDurationChange("days", e.target.value)}
+                        placeholder="Days"
+                        className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-primary-500 focus:outline-none"
+                      />
+                      <span className="absolute right-3 top-3 text-gray-400 text-sm">Days</span>
+                    </div>
+                    <div className="relative flex-1">
+                      <input
+                        type="number"
+                        min="0"
+                        value={durationNights}
+                        onChange={(e) => handleDurationChange("nights", e.target.value)}
+                        placeholder="Nights"
+                        className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-primary-500 focus:outline-none"
+                      />
+                      <span className="absolute right-3 top-3 text-gray-400 text-sm">Nights</span>
+                    </div>
+                  </div>
+                  {/* Hidden input to ensure required validation works if needed, though we rely on handleDurationChange logic mostly */}
+                  <input type="hidden" name="duration" value={formData.duration} />
                 </div>
               </div>
 
@@ -588,10 +668,10 @@ export default function AdminToursPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">Tour Images (4 Required)</label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {[0, 1, 2, 3].map((idx) => (
-                    <div key={idx} className="space-y-3">
+                <label className="block text-sm font-semibold text-gray-700 mb-3">Tour Images (At least 1 required)</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {Array.from({ length: MAX_IMAGES }).map((_, idx) => (
+                    <div key={idx} className="space-y-3 p-3 border border-gray-100 rounded-xl bg-gray-50/50">
                       <div className="flex items-center justify-between">
                         <h4 className="text-sm font-semibold text-gray-600">Image {idx + 1}</h4>
                         {imagePreviews[idx] && (
@@ -657,11 +737,10 @@ export default function AdminToursPage() {
                           name={`image-${idx}`}
                           value={formData.images[idx]}
                           onChange={handleChange}
-                          required
-                          placeholder="https://images.unsplash.com/photo-..."
+                          placeholder="https://images..."
                           className="w-full px-3 py-2 text-sm rounded-lg border-2 border-gray-200 focus:border-red-500 focus:ring-2 focus:ring-red-200 focus:outline-none transition-all"
                         />
-                        <p className="text-xs text-gray-400 mt-1">Recommended: Use Unsplash or other CDN URLs</p>
+                        <p className="text-xs text-gray-400 mt-1">Or paste URL</p>
                       </div>
                     </div>
                   ))}

@@ -6,34 +6,28 @@ interface TourListCardProps {
   tour: Tour
 }
 
-const formatPrice = (price: string): string => {
-  return `Rs ${price.toLocaleString()}`
+const formatPrice = (price: string, currency: string = "Rs"): string => {
+  return `${currency} ${price.toLocaleString()}`
 }
 
 export default function TourListCard({ tour }: TourListCardProps) {
   const navigate = useNavigate()
   const [imageIndex, setImageIndex] = useState<number>(0)
-
   const currentImage = tour.images[imageIndex]
-
   const goToDetails = (): void => {
     navigate(`/tours/${tour.id}`)
   }
-
   const nextImage = (e: React.MouseEvent<HTMLButtonElement>): void => {
     e.stopPropagation()
     setImageIndex((prev) => (prev + 1) % tour.images.length)
   }
-
   const prevImage = (e: React.MouseEvent<HTMLButtonElement>): void => {
     e.stopPropagation()
     setImageIndex((prev) => (prev === 0 ? tour.images.length - 1 : prev - 1))
   }
-
   const dots = useMemo(() => {
     return tour.images.map((_, idx) => idx)
   }, [tour.images])
-
   return (
     <div
       role="button"
@@ -61,7 +55,6 @@ export default function TourListCard({ tour }: TourListCardProps) {
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/45 to-transparent pointer-events-none" />
-
           {/* Slider controls */}
           {tour.images.length > 1 && (
             <>
@@ -85,7 +78,6 @@ export default function TourListCard({ tour }: TourListCardProps) {
                   />
                 </svg>
               </button>
-
               <button
                 type="button"
                 onClick={nextImage}
@@ -106,7 +98,6 @@ export default function TourListCard({ tour }: TourListCardProps) {
                   />
                 </svg>
               </button>
-
               <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5">
                 {dots.map((idx) => (
                   <span
@@ -119,14 +110,12 @@ export default function TourListCard({ tour }: TourListCardProps) {
               </div>
             </>
           )}
-
           {/* Price badge */}
           <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2">
-            <p className="text-lg font-bold text-gray-900">{formatPrice(tour.price)}</p>
+            <p className="text-lg font-bold text-gray-900">{formatPrice(tour.price, tour.currency)}</p>
             <p className="text-[11px] text-gray-600">per person</p>
           </div>
         </div>
-
         {/* Right: Details */}
         <div className="flex-1 p-5 sm:p-6">
           <div className="flex items-start justify-between gap-4">

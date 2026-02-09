@@ -68,7 +68,7 @@ export default function NavBar() {
           />
           <div className="flex flex-col">
             <h1 className="text-lg sm:text-xl md:text-2xl font-extrabold leading-tight tracking-tight">
-              <span className="bg-gradient-to-r from-red-600 via-red-500 to-orange-500 bg-clip-text text-transparent drop-shadow-sm">Fly</span>
+              <span className="bg-gradient-to-r from-red-600 via-red-500 to-orange-500 bg-clip-text text-transparent drop-shadow-sm">The Fly</span>
               <span className="text-gray-800 ml-1 font-bold relative">
                 Connects
                 <span className="absolute -bottom-0.5 left-0 w-full h-0.5 bg-gradient-to-r from-red-500 to-orange-400"></span>

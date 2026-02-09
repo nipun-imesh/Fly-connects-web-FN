@@ -383,7 +383,7 @@ export default function TourDetailsPage() {
               <div className="flex items-baseline justify-between">
                 <h2 className="text-xl font-bold text-gray-900">Price</h2>
                 <p className="text-2xl font-extrabold text-primary-700">
-                  Rs {tour.price.toLocaleString()}
+                  {tour.currency || "Rs"} {tour.price.toLocaleString()}
                 </p>
               </div>
               <p className="text-sm text-gray-600 mt-1">per person</p>

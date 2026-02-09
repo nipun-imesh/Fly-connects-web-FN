@@ -3,12 +3,17 @@ import type { Tour } from "../services/tourService"
 import { getToursFromFirebase, addTourToFirebase, updateTourInFirebase, deleteTourFromFirebase } from "../services/firebaseTourService"
 import { uploadImageToCloudinary, uploadBase64ToCloudinary } from "../services/cloudinary"
 
+const MAX_IMAGES = 4
+
 export default function AdminOffersPage() {
   const [offers, setOffers] = useState<Tour[]>([])
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingOffer, setEditingOffer] = useState<Tour | null>(null)
-  const [imagePreview, setImagePreview] = useState<string>("")
-  const [imageFile, setImageFile] = useState<File | null>(null)
+  
+  // Image handling for multiple images
+  const [imagePreviews, setImagePreviews] = useState<string[]>(Array(MAX_IMAGES).fill(""))
+  const [imageFiles, setImageFiles] = useState<(File | null)[]>(Array(MAX_IMAGES).fill(null))
+  
   const [showAlert, setShowAlert] = useState(false)
   const [alertConfig, setAlertConfig] = useState({ title: "", message: "", type: "success" as "success" | "error" | "confirm", onConfirm: (() => {}) as () => void })
   const [newInclusion, setNewInclusion] = useState("")
@@ -20,9 +25,10 @@ export default function AdminOffersPage() {
     title: "",
     location: "",
     price: "",
+    currency: "LKR",
     duration: "",
     description: "",
-    images: [""],
+    images: Array(MAX_IMAGES).fill(""),
     inclusions: [],
     tourType: "Offers",
     subTour: "",
@@ -67,7 +73,12 @@ export default function AdminOffersPage() {
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault()
     
-    // Validate image
+    // Validate image (Relaxed: Not strictly required if user wants to add an offer without image, 
+    // but the UI implies an image is good. If user insists on "image eka nathuwa", we can skip this check 
+    // or just warn. The prompt says "image eka nathuwa... add kranna" which means we should ALLOW it.)
+    
+    // COMMENTED OUT IMAGE VALIDATION to allow adding without image
+    /*
     const hasImage = formData.images[0].trim() !== "" || imageFile !== null
     if (!hasImage) {
       setAlertConfig({
@@ -79,6 +90,7 @@ export default function AdminOffersPage() {
       setShowAlert(true)
       return
     }
+    */
 
     // Validate inclusions
     if (formData.inclusions.length === 0) {
@@ -95,18 +107,25 @@ export default function AdminOffersPage() {
     setIsUploading(true)
     
     try {
-      // Upload image to Cloudinary
-      let uploadedImageUrl = ""
+      // Upload images to Cloudinary
+      const uploadedImageUrls: string[] = []
       
-      setUploadProgress("Uploading image...")
-      
-      if (imageFile) {
-        uploadedImageUrl = await uploadImageToCloudinary(imageFile)
-      } else if (formData.images[0]) {
-        if (formData.images[0].startsWith("data:image")) {
-          uploadedImageUrl = await uploadBase64ToCloudinary(formData.images[0])
-        } else {
-          uploadedImageUrl = formData.images[0]
+      for (let i = 0; i < MAX_IMAGES; i++) {
+        setUploadProgress(`Uploading image ${i + 1} of ${MAX_IMAGES}...`)
+        
+        if (imageFiles[i]) {
+          // Upload file to Cloudinary
+          const url = await uploadImageToCloudinary(imageFiles[i]!)
+          uploadedImageUrls.push(url)
+        } else if (formData.images[i] && formData.images[i].trim() !== "") {
+          // Check if it's a base64 image
+          if (formData.images[i].startsWith("data:image")) {
+            const url = await uploadBase64ToCloudinary(formData.images[i])
+            uploadedImageUrls.push(url)
+          } else {
+            // Use existing URL
+            uploadedImageUrls.push(formData.images[i])
+          }
         }
       }
 
@@ -114,7 +133,7 @@ export default function AdminOffersPage() {
 
       const offerData = {
         ...formData,
-        images: [uploadedImageUrl, uploadedImageUrl, uploadedImageUrl, uploadedImageUrl], // Repeat same image 4 times for compatibility
+        images: uploadedImageUrls,
         isOffer: true
       }
       
@@ -192,19 +211,27 @@ export default function AdminOffersPage() {
 
   const handleEdit = (offer: Tour): void => {
     setEditingOffer(offer)
+    
+    // Pad images to MAX_IMAGES
+    const paddedImages = [...offer.images]
+    while (paddedImages.length < MAX_IMAGES) paddedImages.push("")
+
     setFormData({
       title: offer.title,
       location: offer.location,
       price: offer.price,
+      currency: offer.currency || "LKR",
       duration: offer.duration,
       description: offer.description,
-      images: [offer.images[0]], // Only first image
+      images: paddedImages,
       inclusions: offer.inclusions,
       tourType: offer.tourType,
       subTour: offer.subTour || "",
       isOffer: true
     })
-    setImagePreview(offer.images[0])
+    setImagePreviews(paddedImages)
+    // Reset file inputs
+    setImageFiles(Array(MAX_IMAGES).fill(null))
     setIsModalOpen(true)
   }
 
@@ -215,16 +242,17 @@ export default function AdminOffersPage() {
   const closeModal = (): void => {
     setIsModalOpen(false)
     setEditingOffer(null)
-    setImagePreview("")
-    setImageFile(null)
+    setImagePreviews(Array(MAX_IMAGES).fill(""))
+    setImageFiles(Array(MAX_IMAGES).fill(null))
     setNewInclusion("")
     setFormData({
       title: "",
       location: "",
       price: "",
+      currency: "LKR",
       duration: "",
       description: "",
-      images: [""],
+      images: Array(MAX_IMAGES).fill(""),
       inclusions: [],
       tourType: "Offers",
       subTour: "",
@@ -234,12 +262,20 @@ export default function AdminOffersPage() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>): void => {
     const { name, value } = e.target
-    if (name === "image") {
-      const newImages = [value]
+    if (name.startsWith("image-")) {
+      const index = parseInt(name.split("-")[1])
+      const newImages = [...formData.images]
+      newImages[index] = value
+      const newPreviews = [...imagePreviews]
+      newPreviews[index] = value
       setFormData({ ...formData, images: newImages })
-      setImagePreview(value)
+      setImagePreviews(newPreviews)
     } else if (name === "price") {
       setFormData({ ...formData, [name]: value })
+    } else if (name === "title" || name === "location") {
+      // Capitalize first letter of the string
+      const capitalizedValue = value.length > 0 ? value.charAt(0).toUpperCase() + value.slice(1) : value
+      setFormData({ ...formData, [name]: capitalizedValue })
     } else {
       setFormData({ ...formData, [name]: value })
     }
@@ -257,7 +293,7 @@ export default function AdminOffersPage() {
     setFormData({ ...formData, inclusions: newInclusions })
   }
 
-  const handleImageFile = (e: React.ChangeEvent<HTMLInputElement>): void => {
+  const handleImageFile = (e: React.ChangeEvent<HTMLInputElement>, index: number): void => {
     const file = e.target.files?.[0]
     if (file) {
       // Validate file type
@@ -284,13 +320,21 @@ export default function AdminOffersPage() {
         return
       }
 
-      setImageFile(file)
+      const newImageFiles = [...imageFiles]
+      newImageFiles[index] = file
+      setImageFiles(newImageFiles)
 
       const reader = new FileReader()
       reader.onloadend = () => {
         const result = reader.result as string
-        setImagePreview(result)
-        setFormData({ ...formData, images: [result] })
+        const newPreviews = [...imagePreviews]
+        newPreviews[index] = result
+        setImagePreviews(newPreviews)
+        
+        // Also update formData.images for preview consistencies if needed
+        const newImages = [...formData.images]
+        newImages[index] = result
+        setFormData({ ...formData, images: newImages })
       }
       reader.onerror = () => {
         setAlertConfig({
@@ -357,7 +401,7 @@ export default function AdminOffersPage() {
               <div className="grid grid-cols-2 gap-2 mb-3 pb-3 border-b border-gray-200">
                 <div className="text-center">
                   <div className="text-xs text-gray-500 mb-1">Price</div>
-                  <div className="text-sm font-bold text-primary-600">Rs {offer.price}</div>
+                  <div className="text-sm font-bold text-primary-600">{offer.currency || "Rs"} {offer.price}</div>
                 </div>
                 <div className="text-center border-l border-gray-200">
                   <div className="text-xs text-gray-500 mb-1">Duration</div>
@@ -441,15 +485,26 @@ export default function AdminOffersPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Price</label>
-                  <input
-                    type="number"
-                    name="price"
-                    value={formData.price}
-                    onChange={handleChange}
-                    required
-                    min="0"
-                    className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-primary-500 focus:outline-none"
-                  />
+                  <div className="flex gap-2">
+                    <select
+                      name="currency"
+                      value={formData.currency}
+                      onChange={handleChange}
+                      className="px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-primary-500 focus:outline-none bg-white"
+                    >
+                      <option value="LKR">LKR</option>
+                      <option value="USD">USD</option>
+                    </select>
+                    <input
+                      type="number"
+                      name="price"
+                      value={formData.price}
+                      onChange={handleChange}
+                      required
+                      min="0"
+                      className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-primary-500 focus:outline-none"
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -538,68 +593,82 @@ export default function AdminOffersPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">Offer Image (1 Required)</label>
-                <div className="space-y-3">
-                  {/* Image Preview */}
-                  {imagePreview && (
-                    <div className="relative group">
-                      <img 
-                        src={imagePreview} 
-                        alt="Preview"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement
-                          target.src = "https://via.placeholder.com/400x300?text=Invalid+Image"
-                        }}
-                        className="w-full h-48 object-cover rounded-lg border-2 border-gray-200"
-                      />
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
-                        <span className="text-white text-sm font-semibold">Image Preview</span>
+                <label className="block text-sm font-semibold text-gray-700 mb-3">Offer Images (At least 1 required)</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {Array.from({ length: MAX_IMAGES }).map((_, idx) => (
+                    <div key={idx} className="space-y-3 p-3 border border-gray-100 rounded-xl bg-gray-50/50">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-semibold text-gray-600">Image {idx + 1}</h4>
+                        {/* Clear button if image exists */}
+                        {imagePreviews[idx] && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newImages = [...formData.images]
+                              newImages[idx] = ""
+                              const newPreviews = [...imagePreviews]
+                              newPreviews[idx] = ""
+                              const newFiles = [...imageFiles]
+                              newFiles[idx] = null
+                              setFormData({ ...formData, images: newImages })
+                              setImagePreviews(newPreviews)
+                              setImageFiles(newFiles)
+                            }}
+                            className="text-xs text-red-600 hover:text-red-700 font-semibold"
+                          >
+                            Clear
+                          </button>
+                        )}
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setFormData({ ...formData, images: [""] })
-                          setImagePreview("")
-                          setImageFile(null)
-                        }}
-                        className="absolute top-2 right-2 bg-red-600 text-white px-3 py-1 rounded-lg text-xs font-semibold hover:bg-red-700"
-                      >
-                        Clear
-                      </button>
+                      
+                      {/* Image Preview */}
+                      {imagePreviews[idx] && (
+                        <div className="relative group">
+                          <img 
+                            src={imagePreviews[idx]} 
+                            alt={`Preview ${idx + 1}`}
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement
+                              target.src = "https://via.placeholder.com/400x300?text=Invalid+Image"
+                            }}
+                            className="w-full h-32 object-cover rounded-lg border-2 border-gray-200"
+                          />
+                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                            <span className="text-white text-xs font-semibold">Preview {idx + 1}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Upload File */}
+                      <label className="w-full px-3 py-2 border-2 border-dashed border-gray-300 rounded-lg hover:border-red-500 transition-all cursor-pointer flex flex-col items-center justify-center gap-1 bg-gray-50 hover:bg-gray-100">
+                        <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                        <span className="text-xs text-gray-600 font-medium">Upload Image</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleImageFile(e, idx)}
+                          className="hidden"
+                        />
+                      </label>
+
+                      {/* URL Input */}
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">
+                          Or Enter URL {formData.images[idx] && <span className="text-green-600 ml-1">✓</span>}
+                        </label>
+                        <input
+                          type="url"
+                          name={`image-${idx}`}
+                          value={formData.images[idx]}
+                          onChange={handleChange}
+                          placeholder="https://images..."
+                          className="w-full px-3 py-2 text-sm rounded-lg border-2 border-gray-200 focus:border-red-500 focus:ring-2 focus:ring-red-200 focus:outline-none transition-all"
+                        />
+                      </div>
                     </div>
-                  )}
-
-                  {/* Upload File */}
-                  <label className="w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-red-500 transition-all cursor-pointer flex flex-col items-center justify-center gap-2 bg-gray-50 hover:bg-gray-100">
-                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                    </svg>
-                    <span className="text-sm text-gray-600 font-medium">Upload Image</span>
-                    <span className="text-xs text-gray-400">PNG, JPG, GIF up to 5MB</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageFile}
-                      className="hidden"
-                    />
-                  </label>
-
-                  {/* URL Input */}
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">
-                      Or Enter URL {formData.images[0] && <span className="text-green-600 ml-1">✓</span>}
-                    </label>
-                    <input
-                      type="url"
-                      name="image"
-                      value={formData.images[0]}
-                      onChange={handleChange}
-                      required
-                      placeholder="https://images.unsplash.com/photo-..."
-                      className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-red-500 focus:ring-2 focus:ring-red-200 focus:outline-none transition-all"
-                    />
-                    <p className="text-xs text-gray-400 mt-1">Recommended: Use Unsplash or other CDN URLs</p>
-                  </div>
+                  ))}
                 </div>
               </div>
 
