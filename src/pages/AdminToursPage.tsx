@@ -17,6 +17,8 @@ export default function AdminToursPage() {
   const [newInclusion, setNewInclusion] = useState("")
   const [newItineraryTitle, setNewItineraryTitle] = useState("")
   const [newItineraryDesc, setNewItineraryDesc] = useState("")
+  const [newItineraryImage, setNewItineraryImage] = useState("")
+  const [editingItineraryIndex, setEditingItineraryIndex] = useState<number | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState("")
   const [tourIdMap, setTourIdMap] = useState<Map<number, string>>(new Map())
@@ -131,11 +133,23 @@ export default function AdminToursPage() {
         }
       }
 
+      // Upload Itinerary Images
+      const processedItinerary = [...(formData.itinerary || [])]
+      for (let i = 0; i < processedItinerary.length; i++) {
+         const item = processedItinerary[i]
+         if (item.image && item.image.startsWith("data:image")) {
+            setUploadProgress(`Uploading itinerary image for Day ${i + 1}...`)
+            const url = await uploadBase64ToCloudinary(item.image)
+            processedItinerary[i].image = url
+         }
+      }
+
       setUploadProgress("Saving tour to Firebase...")
 
       const tourData = {
         ...formData,
-        images: uploadedImageUrls
+        images: uploadedImageUrls,
+        itinerary: processedItinerary
       }
       
       if (editingTour) {
@@ -329,22 +343,83 @@ export default function AdminToursPage() {
     setFormData({ ...formData, inclusions: newInclusions })
   }
 
-  const addItineraryItem = (): void => {
-    if (!newItineraryTitle.trim() || !newItineraryDesc.trim()) return
-    setFormData({
-      ...formData,
-      itinerary: [...(formData.itinerary || []), { title: newItineraryTitle, description: newItineraryDesc }]
-    })
+  const handleItineraryImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      alert("Please upload a valid image file")
+      return
+    }
+
+    // Validate size (max 2MB for itinerary thumbnail)
+    if (file.size > 2 * 1024 * 1024) {
+      alert("Image size should not exceed 2MB")
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setNewItineraryImage(reader.result as string)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const startEditingItinerary = (index: number) => {
+    const item = (formData.itinerary || [])[index]
+    if (!item) return
+    setNewItineraryTitle(item.title)
+    setNewItineraryDesc(item.description)
+    setNewItineraryImage(item.image || "")
+    setEditingItineraryIndex(index)
+  }
+
+  const cancelEditingItinerary = () => {
     setNewItineraryTitle("")
     setNewItineraryDesc("")
+    setNewItineraryImage("")
+    setEditingItineraryIndex(null)
+  }
+
+  const addItineraryItem = (): void => {
+    if (!newItineraryTitle.trim() || !newItineraryDesc.trim()) return
+
+    if (editingItineraryIndex !== null) {
+      // Update existing
+      const updatedItinerary = [...(formData.itinerary || [])]
+      updatedItinerary[editingItineraryIndex] = {
+        title: newItineraryTitle,
+        description: newItineraryDesc,
+        image: newItineraryImage
+      }
+      setFormData({ ...formData, itinerary: updatedItinerary })
+      setEditingItineraryIndex(null)
+    } else {
+      // Add new
+      setFormData({
+        ...formData,
+        itinerary: [...(formData.itinerary || []), { 
+          title: newItineraryTitle, 
+          description: newItineraryDesc, 
+          image: newItineraryImage 
+        }]
+      })
+    }
+    
+    setNewItineraryTitle("")
+    setNewItineraryDesc("")
+    setNewItineraryImage("")
   }
 
   const removeItineraryItem = (index: number): void => {
     const newItinerary = (formData.itinerary || []).filter((_, idx) => idx !== index)
     setFormData({ ...formData, itinerary: newItinerary })
-  }
-
-  const handleImageFile = (e: React.ChangeEvent<HTMLInputElement>, index: number): void => {
+    if (editingItineraryIndex === index) {
+      cancelEditingItinerary()
+    } else if (editingItineraryIndex !== null && index < editingItineraryIndex) {
+      setEditingItineraryIndex(editingItineraryIndex - 1)
+    }
     const file = e.target.files?.[0]
     if (file) {
       // Validate file type
@@ -715,31 +790,90 @@ export default function AdminToursPage() {
                     rows={3}
                     className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-primary-500 focus:outline-none"
                   />
-                  <button
-                    type="button"
-                    onClick={addItineraryItem}
-                    className="w-full py-2 bg-orange-500 text-white font-semibold rounded-lg hover:bg-orange-600 transition"
-                  >
-                    Add Day
-                  </button>
+                  
+                  {/* Itinerary Image Input */}
+                  <div className="flex items-center gap-4">
+                     <div className="flex-1">
+                        <label className="block text-xs font-semibold text-gray-600 mb-1">Day Image (Optional)</label>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleItineraryImageUpload}
+                          className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
+                        />
+                     </div>
+                     {newItineraryImage && (
+                        <div className="w-16 h-16 relative">
+                           <img src={newItineraryImage} alt="Preview" className="w-full h-full object-cover rounded-lg border border-gray-200" />
+                           <button
+                              type="button"
+                              onClick={() => setNewItineraryImage("")}
+                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600"
+                           >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                           </button>
+                        </div>
+                     )}
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={addItineraryItem}
+                      className={`flex-1 py-2 font-semibold rounded-lg transition ${
+                        editingItineraryIndex !== null 
+                          ? "bg-blue-600 hover:bg-blue-700 text-white"
+                          : "bg-orange-500 hover:bg-orange-600 text-white"
+                      }`}
+                    >
+                      {editingItineraryIndex !== null ? "Update Day" : "Add Day"}
+                    </button>
+                    {editingItineraryIndex !== null && (
+                      <button
+                        type="button"
+                        onClick={cancelEditingItinerary}
+                        className="px-4 py-2 bg-gray-500 text-white font-semibold rounded-lg hover:bg-gray-600 transition"
+                      >
+                        Cancel
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Itinerary List */}
                 {formData.itinerary && formData.itinerary.length > 0 ? (
                   <div className="space-y-3">
                     {formData.itinerary.map((item, idx) => (
-                      <div key={idx} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm relative group">
-                        <button
-                          type="button"
-                          onClick={() => removeItineraryItem(idx)}
-                          className="absolute top-3 right-3 text-red-400 hover:text-red-600"
-                        >
-                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
-                        <h4 className="font-bold text-gray-800 pr-8">{item.title}</h4>
-                        <p className="text-sm text-gray-600 mt-1 whitespace-pre-wrap">{item.description}</p>
+                      <div 
+                        key={idx} 
+                        onClick={() => startEditingItinerary(idx)}
+                        className={`p-4 rounded-xl border shadow-sm relative group flex gap-4 cursor-pointer transition-all ${
+                          editingItineraryIndex === idx 
+                             ? "bg-blue-50 border-blue-300 ring-2 ring-blue-100" 
+                             : "bg-white border-gray-200 hover:border-blue-300 hover:shadow-md"
+                        }`}
+                      >
+                        {item.image && (
+                           <div className="w-16 h-16 flex-shrink-0">
+                              <img src={item.image} alt={`Day ${idx+1}`} className="w-full h-full object-cover rounded-lg" />
+                           </div>
+                        )}
+                        <div className="flex-1">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              removeItineraryItem(idx)
+                            }}
+                            className="absolute top-3 right-3 text-red-400 hover:text-red-600 p-1 rounded-full hover:bg-red-50 transition-colors"
+                          >
+                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                          </button>
+                          <h4 className="font-bold text-gray-800 pr-8">{item.title}</h4>
+                          <p className="text-sm text-gray-600 mt-1 whitespace-pre-wrap">{item.description}</p>
+                        </div>
                       </div>
                     ))}
                   </div>

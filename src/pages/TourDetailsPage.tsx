@@ -397,6 +397,11 @@ export default function TourDetailsPage() {
                       <div className="pb-5 pt-0.5">
                         <h3 className="text-sm sm:text-base font-bold text-gray-900">{item.title}</h3>
                         <div className="mt-1.5 bg-gray-50 rounded-lg p-2.5 sm:p-3 border border-gray-100">
+                          {item.image && (
+                            <div className="mb-2">
+                               <img src={item.image} alt={item.title} className="w-40 h-28 object-cover rounded-md shadow-sm" />
+                            </div>
+                          )}
                           <p className="text-gray-600 leading-relaxed text-xs sm:text-sm whitespace-pre-wrap">{item.description}</p>
                         </div>
                       </div>
@@ -408,7 +413,7 @@ export default function TourDetailsPage() {
           </div>
 
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sticky top-24">
               <div className="flex items-baseline justify-between">
                 <h2 className="text-xl font-bold text-gray-900">Price</h2>
                 <p className="text-2xl font-extrabold text-primary-700">

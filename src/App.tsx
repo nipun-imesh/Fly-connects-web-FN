@@ -8,7 +8,7 @@ function AppContent() {
   const isAdminRoute = location.pathname.startsWith("/admin")
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className={`min-h-screen flex flex-col ${!isAdminRoute ? 'bg-gradient-to-br from-white via-red-50 to-gray-100' : ''}`}>
       {!isAdminRoute && <NavBar />}
       <main className="flex-grow">
         <AppRoutes />
