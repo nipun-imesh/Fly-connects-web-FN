@@ -420,6 +420,9 @@ export default function AdminToursPage() {
     } else if (editingItineraryIndex !== null && index < editingItineraryIndex) {
       setEditingItineraryIndex(editingItineraryIndex - 1)
     }
+  }
+
+  const handleImageFile = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const file = e.target.files?.[0]
     if (file) {
       // Validate file type
