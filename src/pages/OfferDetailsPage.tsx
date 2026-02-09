@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useMemo, useState, useEffect } from "react"
 import type { ChangeEvent, FormEvent } from "react"
 import { Link, useParams } from "react-router-dom"
 import emailjs from "@emailjs/browser"
@@ -6,7 +6,9 @@ import Loader from "../components/ui/Loader"
 import AlertModal from "../components/ui/AlertModal"
 import type { AlertModalConfig } from "../components/ui/AlertModal"
 import usePreloadImages from "../hooks/usePreloadImages"
+import { getToursFromFirebase } from "../services/firebaseTourService"
 import { getServiceById } from "../services/serviceData"
+import type { Tour } from "../services/tourService"
 
 interface EnquiryFormData {
   name: string
@@ -52,13 +54,25 @@ const sanitizeWhatsappNumber = (raw: string): string => {
 export default function OfferDetailsPage() {
   const params = useParams()
   const offerId = Number(params.offerId)
-
-  const offer = useMemo(() => {
-    if (!Number.isFinite(offerId)) return undefined
-    return getServiceById(offerId)
+  const [offer, setOffer] = useState<Tour | null>(null)
+  
+  // Fetch offers from Firebase
+  useEffect(() => {
+    const fetchOffer = async () => {
+      try {
+        const tours = await getToursFromFirebase()
+        // Find by index-based ID used in list (assumed 1-based index)
+        const found = tours.find((t: any, index: number) => (index + 1) === offerId && t.isOffer) || null
+        setOffer(found)
+      } catch (err) {
+        console.error(err)
+      }
+    }
+    fetchOffer()
   }, [offerId])
-
-  const offerImages = useMemo(() => (offer?.image ? [offer.image] : []), [offer])
+  
+  // Use first image if available
+  const offerImages = useMemo(() => (offer?.images && offer.images.length > 0 ? [offer.images[0]] : []), [offer])
   const { isReady: areImagesReady } = usePreloadImages(offerImages)
 
   const [formData, setFormData] = useState<EnquiryFormData>({
@@ -263,7 +277,7 @@ export default function OfferDetailsPage() {
         {/* Hero */}
         <div className="relative rounded-3xl overflow-hidden shadow-xl border border-gray-100">
           <div className="relative h-[280px] sm:h-[360px] md:h-[420px] bg-gray-900">
-            <img src={offer.image} alt={offer.title} className="w-full h-full object-cover" />
+            <img src={offer.images && offer.images[0] ? offer.images[0] : ""} alt={offer.title} className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/30 to-transparent" />
             <div className="absolute top-4 left-4 bg-red-600/95 rounded-lg px-3 py-2">
               <p className="text-sm font-bold text-white">Offer</p>
@@ -285,14 +299,43 @@ export default function OfferDetailsPage() {
               <p className="text-gray-700 mt-3 leading-relaxed">{offer.description}</p>
             </div>
 
-            {offer.details && offer.details.length > 0 && (
+            {offer.inclusions && offer.inclusions.length > 0 && (
               <div className="mt-7">
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Package Inclusions</h2>
                 <ul className="mt-3 list-disc pl-5 space-y-2 text-gray-700">
-                  {offer.details.map((item) => (
+                  {offer.inclusions.map((item) => (
                     <li key={item}>{item}</li>
                   ))}
                 </ul>
+              </div>
+            )}
+
+            {offer.itinerary && offer.itinerary.length > 0 && (
+              <div className="mt-10">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6">Tour Itinerary</h2>
+                <div className="space-y-0">
+                  {offer.itinerary.map((item, idx) => (
+                    <div key={idx} className="flex gap-3 sm:gap-4 group">
+                      {/* Day Indicator */}
+                      <div className="flex-shrink-0 flex flex-col items-center">
+                         <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-red-500 to-orange-500 text-white flex flex-col items-center justify-center shadow-lg shadow-red-200 z-10">
+                           <span className="text-[8px] sm:text-[9px] font-medium uppercase opacity-90">Day</span>
+                           <span className="text-base sm:text-lg font-bold leading-none">{idx + 1}</span>
+                         </div>
+                         {/* Vertical connector line (except for last item) */}
+                         <div className={`w-0.5 flex-grow bg-gradient-to-b from-red-200 to-transparent my-1.5 ${idx === offer.itinerary!.length - 1 ? 'hidden' : ''}`} />
+                      </div>
+                      
+                      {/* Content */}
+                      <div className="pb-5 pt-0.5">
+                        <h3 className="text-sm sm:text-base font-bold text-gray-900">{item.title}</h3>
+                        <div className="mt-1.5 bg-gray-50 rounded-lg p-2.5 sm:p-3 border border-gray-100">
+                          <p className="text-gray-600 leading-relaxed text-xs sm:text-sm whitespace-pre-wrap">{item.description}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -303,9 +346,6 @@ export default function OfferDetailsPage() {
                 <div>
                   <h2 className="text-xl font-bold text-gray-900">Enquiry</h2>
                   <p className="text-sm text-gray-600 mt-1">Send an enquiry for this offer.</p>
-                </div>
-                <div className="text-xl" aria-hidden>
-                  {offer.icon}
                 </div>
               </div>
 

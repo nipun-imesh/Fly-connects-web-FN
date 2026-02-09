@@ -376,6 +376,35 @@ export default function TourDetailsPage() {
                 ))}
               </ul>
             </div>
+
+            {tour.itinerary && tour.itinerary.length > 0 && (
+              <div className="mt-10">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6">Tour Itinerary</h2>
+                <div className="space-y-0">
+                  {tour.itinerary.map((item, idx) => (
+                    <div key={idx} className="flex gap-3 sm:gap-4 group">
+                      {/* Day Indicator */}
+                      <div className="flex-shrink-0 flex flex-col items-center">
+                         <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-red-500 to-orange-500 text-white flex flex-col items-center justify-center shadow-lg shadow-red-200 z-10">
+                           <span className="text-[8px] sm:text-[9px] font-medium uppercase opacity-90">Day</span>
+                           <span className="text-base sm:text-lg font-bold leading-none">{idx + 1}</span>
+                         </div>
+                         {/* Vertical connector line (except for last item) */}
+                         <div className={`w-0.5 flex-grow bg-gradient-to-b from-red-200 to-transparent my-1.5 ${idx === tour.itinerary!.length - 1 ? 'hidden' : ''}`} />
+                      </div>
+                      
+                      {/* Content */}
+                      <div className="pb-5 pt-0.5">
+                        <h3 className="text-sm sm:text-base font-bold text-gray-900">{item.title}</h3>
+                        <div className="mt-1.5 bg-gray-50 rounded-lg p-2.5 sm:p-3 border border-gray-100">
+                          <p className="text-gray-600 leading-relaxed text-xs sm:text-sm whitespace-pre-wrap">{item.description}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="lg:col-span-2">

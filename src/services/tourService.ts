@@ -1,3 +1,8 @@
+export interface ItineraryItem {
+  title: string
+  description: string
+}
+
 export interface Tour {
   id: number
   title: string
@@ -8,6 +13,7 @@ export interface Tour {
   description: string
   images: string[]
   inclusions: string[]
+  itinerary?: ItineraryItem[]
   tourType: string
   subTour?: string
   isOffer?: boolean

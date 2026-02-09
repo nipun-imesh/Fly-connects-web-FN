@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import Loader from "../components/ui/Loader"
-import type { Tour } from "../services/tourService"
+import type { Tour, ItineraryItem } from "../services/tourService"
 import { getToursFromFirebase, addTourToFirebase, updateTourInFirebase, deleteTourFromFirebase } from "../services/firebaseTourService"
 import { uploadImageToCloudinary, uploadBase64ToCloudinary } from "../services/cloudinary"
 
@@ -18,6 +18,8 @@ export default function AdminOffersPage() {
   const [showAlert, setShowAlert] = useState(false)
   const [alertConfig, setAlertConfig] = useState({ title: "", message: "", type: "success" as "success" | "error" | "confirm", onConfirm: (() => {}) as () => void })
   const [newInclusion, setNewInclusion] = useState("")
+  const [newItineraryTitle, setNewItineraryTitle] = useState("")
+  const [newItineraryDesc, setNewItineraryDesc] = useState("")
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState("")
   const [offerIdMap, setOfferIdMap] = useState<Map<number, string>>(new Map())
@@ -34,6 +36,7 @@ export default function AdminOffersPage() {
     description: "",
     images: Array(MAX_IMAGES).fill(""),
     inclusions: [],
+    itinerary: [],
     tourType: "Offers",
     subTour: "",
     isOffer: true
@@ -243,6 +246,7 @@ export default function AdminOffersPage() {
       description: offer.description,
       images: paddedImages,
       inclusions: offer.inclusions,
+      itinerary: offer.itinerary || [],
       tourType: offer.tourType,
       subTour: offer.subTour || "",
       isOffer: true
@@ -263,6 +267,8 @@ export default function AdminOffersPage() {
     setImagePreviews(Array(MAX_IMAGES).fill(""))
     setImageFiles(Array(MAX_IMAGES).fill(null))
     setNewInclusion("")
+    setNewItineraryTitle("")
+    setNewItineraryDesc("")
     setDurationDays("")
     setDurationNights("")
     setFormData({
@@ -274,6 +280,7 @@ export default function AdminOffersPage() {
       description: "",
       images: Array(MAX_IMAGES).fill(""),
       inclusions: [],
+      itinerary: [],
       tourType: "Offers",
       subTour: "",
       isOffer: true
@@ -328,6 +335,21 @@ export default function AdminOffersPage() {
   const removeInclusion = (index: number): void => {
     const newInclusions = formData.inclusions.filter((_, idx) => idx !== index)
     setFormData({ ...formData, inclusions: newInclusions })
+  }
+
+  const addItineraryItem = (): void => {
+    if (!newItineraryTitle.trim() || !newItineraryDesc.trim()) return
+    setFormData({
+      ...formData,
+      itinerary: [...(formData.itinerary || []), { title: newItineraryTitle, description: newItineraryDesc }]
+    })
+    setNewItineraryTitle("")
+    setNewItineraryDesc("")
+  }
+
+  const removeItineraryItem = (index: number): void => {
+    const newItinerary = (formData.itinerary || []).filter((_, idx) => idx !== index)
+    setFormData({ ...formData, itinerary: newItinerary })
   }
 
   const handleImageFile = (e: React.ChangeEvent<HTMLInputElement>, index: number): void => {
@@ -647,6 +669,58 @@ export default function AdminOffersPage() {
 
                 {formData.inclusions.length === 0 && (
                   <p className="text-sm text-gray-500 italic">No inclusions added yet. Add at least one inclusion above.</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Itinerary (Day by Day)</label>
+                
+                {/* Add Itinerary Item */}
+                <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-4 space-y-3">
+                  <input
+                    type="text"
+                    value={newItineraryTitle}
+                    onChange={(e) => setNewItineraryTitle(e.target.value)}
+                    placeholder="Day Title (e.g. Day 1: Arrival)"
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-primary-500 focus:outline-none"
+                  />
+                  <textarea
+                    value={newItineraryDesc}
+                    onChange={(e) => setNewItineraryDesc(e.target.value)}
+                    placeholder="Describe the activities for the day..."
+                    rows={3}
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-primary-500 focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={addItineraryItem}
+                    className="w-full py-2 bg-to-orange-500 text-white font-semibold rounded-lg hover:bg-blue-700 transition"
+                  >
+                    Add Day
+                  </button>
+                </div>
+
+                {/* Itinerary List */}
+                {formData.itinerary && formData.itinerary.length > 0 ? (
+                  <div className="space-y-3">
+                    {formData.itinerary.map((item, idx) => (
+                      <div key={idx} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm relative group">
+                        <button
+                          type="button"
+                          onClick={() => removeItineraryItem(idx)}
+                          className="absolute top-3 right-3 text-red-400 hover:text-red-600"
+                        >
+                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                        <h4 className="font-bold text-gray-800 pr-8">{item.title}</h4>
+                        <p className="text-sm text-gray-600 mt-1 whitespace-pre-wrap">{item.description}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 italic">No itinerary details added.</p>
                 )}
               </div>
 
