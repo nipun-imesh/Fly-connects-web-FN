@@ -73,7 +73,6 @@ export default function AdminToursPage() {
     e.preventDefault()
     
     // Validate images
-    const hasAllImages = formData.images.every(img => img.trim() !== "") || imageFiles.some(file => file !== null)
     // Relaxed validation: require at least one image if none are present in formData
     const hasAtLeastOneImage = formData.images.some(img => img.trim() !== "") || imageFiles.some(file => file !== null)
     
