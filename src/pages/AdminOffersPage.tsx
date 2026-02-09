@@ -20,6 +20,8 @@ export default function AdminOffersPage() {
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState("")
   const [offerIdMap, setOfferIdMap] = useState<Map<number, string>>(new Map())
+  const [durationDays, setDurationDays] = useState("")
+  const [durationNights, setDurationNights] = useState("")
 
   const [formData, setFormData] = useState<Omit<Tour, "id">>({
     title: "",
@@ -212,6 +214,18 @@ export default function AdminOffersPage() {
   const handleEdit = (offer: Tour): void => {
     setEditingOffer(offer)
     
+    // Parse duration string e.g., "7D 6N" or "7 Days"
+    const durationMatch = offer.duration.match(/(\d+)\s*D\s*(\d+)\s*N/)
+    if (durationMatch) {
+      setDurationDays(durationMatch[1])
+      setDurationNights(durationMatch[2])
+    } else {
+      // Fallback for old format "7 Days"
+      const daysMatch = offer.duration.match(/(\d+)/)
+      setDurationDays(daysMatch ? daysMatch[1] : "")
+      setDurationNights("")
+    }
+
     // Pad images to MAX_IMAGES
     const paddedImages = [...offer.images]
     while (paddedImages.length < MAX_IMAGES) paddedImages.push("")
@@ -245,6 +259,8 @@ export default function AdminOffersPage() {
     setImagePreviews(Array(MAX_IMAGES).fill(""))
     setImageFiles(Array(MAX_IMAGES).fill(null))
     setNewInclusion("")
+    setDurationDays("")
+    setDurationNights("")
     setFormData({
       title: "",
       location: "",
@@ -258,6 +274,23 @@ export default function AdminOffersPage() {
       subTour: "",
       isOffer: true
     })
+  }
+
+  const handleDurationChange = (type: "days" | "nights", value: string) => {
+    let d = type === "days" ? value : durationDays
+    let n = type === "nights" ? value : durationNights
+
+    if (type === "days") setDurationDays(value)
+    if (type === "nights") setDurationNights(value)
+
+    let newDuration = ""
+    if (d && n) {
+      newDuration = `${d}D ${n}N`
+    } else if (d) {
+      newDuration = `${d} Days`
+    }
+    
+    setFormData(prev => ({ ...prev, duration: newDuration }))
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>): void => {
@@ -509,15 +542,32 @@ export default function AdminOffersPage() {
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Duration</label>
-                  <input
-                    type="text"
-                    name="duration"
-                    value={formData.duration}
-                    onChange={handleChange}
-                    required
-                    placeholder="e.g., 7 Days"
-                    className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-primary-500 focus:outline-none"
-                  />
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <input
+                        type="number"
+                        min="1"
+                        value={durationDays}
+                        onChange={(e) => handleDurationChange("days", e.target.value)}
+                        placeholder="Days"
+                        className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-primary-500 focus:outline-none"
+                      />
+                      <span className="absolute right-3 top-3 text-gray-400 text-sm">Days</span>
+                    </div>
+                    <div className="relative flex-1">
+                      <input
+                        type="number"
+                        min="0"
+                        value={durationNights}
+                        onChange={(e) => handleDurationChange("nights", e.target.value)}
+                        placeholder="Nights"
+                        className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-primary-500 focus:outline-none"
+                      />
+                      <span className="absolute right-3 top-3 text-gray-400 text-sm">Nights</span>
+                    </div>
+                  </div>
+                  {/* Hidden input to ensure required validation works if needed */}
+                  <input type="hidden" name="duration" value={formData.duration} />
                 </div>
               </div>
 
