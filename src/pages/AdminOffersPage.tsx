@@ -552,7 +552,7 @@ export default function AdminOffersPage() {
                         placeholder="Days"
                         className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-primary-500 focus:outline-none"
                       />
-                      <span className="absolute right-3 top-3 text-gray-400 text-sm">Days</span>
+                      <span className="absolute right-3 top-3 text-gray-400 text-sm"></span>
                     </div>
                     <div className="relative flex-1">
                       <input
@@ -563,7 +563,7 @@ export default function AdminOffersPage() {
                         placeholder="Nights"
                         className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-primary-500 focus:outline-none"
                       />
-                      <span className="absolute right-3 top-3 text-gray-400 text-sm">Nights</span>
+                      <span className="absolute right-3 top-3 text-gray-400 text-sm"></span>
                     </div>
                   </div>
                   {/* Hidden input to ensure required validation works if needed */}
