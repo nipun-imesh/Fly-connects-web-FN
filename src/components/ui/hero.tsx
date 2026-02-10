@@ -9,7 +9,8 @@ const heroImages = [
   heroPhoto1,
   heroPhoto2,
   heroPhoto3,
-  heroPhoto4
+  heroPhoto4,
+  heroPhoto3
 ];
 
 export default function Hero() {
@@ -36,7 +37,7 @@ export default function Hero() {
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentImageIndex((prevIndex) => (prevIndex + 1) % heroImages.length);
-    }, 15000);
+    }, 8000);
 
     return () => clearInterval(interval);
   }, []);
@@ -116,7 +117,7 @@ export default function Hero() {
               className={`w-full h-full object-cover ${
                 isCurrent || isPrevious ? "animate-ken-burns" : ""
               }`}
-              style={{ animationDuration: "15s" }}
+              style={{ animationDuration: "45s" }}
               loading={index === 0 ? "eager" : "lazy"}
             />
           </div>

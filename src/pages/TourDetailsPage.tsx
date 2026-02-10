@@ -399,7 +399,7 @@ export default function TourDetailsPage() {
                         <div className="mt-1.5 bg-gray-50 rounded-lg p-2.5 sm:p-3 border border-gray-100">
                           {item.image && (
                             <div className="mb-2">
-                               <img src={item.image} alt={item.title} className="w-60 h-40 object-cover rounded-md shadow-sm" />
+                               <img src={item.image} alt={item.title} className="w-80 h-52 object-cover rounded-md shadow-sm" />
                             </div>
                           )}
                           <p className="text-gray-600 leading-relaxed text-xs sm:text-sm whitespace-pre-wrap">{item.description}</p>
