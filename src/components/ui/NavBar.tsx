@@ -58,7 +58,7 @@ export default function NavBar() {
 
   return (
     <>
-      <nav className="flex items-center justify-between px-4 sm:px-6 lg:px-20 border-b-2 h-[60px] sm:h-[70px] md:h-[80px] border-gray-100 bg-white/90 backdrop-blur-lg fixed top-0 left-0 w-full z-50 shadow-sm">
+      <nav className="flex items-center justify-between px-4 sm:px-6 lg:px-20 border-b border-white/20 h-[60px] sm:h-[70px] md:h-[80px] bg-white/30 backdrop-blur-md fixed top-0 left-0 w-full z-50 shadow-lg transition-all duration-300">
         {/* Logo */}
         <Link to="/" className="flex items-center space-x-2 sm:space-x-3 group z-50">
           <img 
