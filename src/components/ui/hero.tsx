@@ -36,7 +36,7 @@ export default function Hero() {
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentImageIndex((prevIndex) => (prevIndex + 1) % heroImages.length);
-    }, 20000);
+    }, 15000);
 
     return () => clearInterval(interval);
   }, []);
@@ -116,7 +116,7 @@ export default function Hero() {
               className={`w-full h-full object-cover ${
                 isCurrent || isPrevious ? "animate-ken-burns" : ""
               }`}
-              style={{ animationDuration: "20s" }}
+              style={{ animationDuration: "15s" }}
               loading={index === 0 ? "eager" : "lazy"}
             />
           </div>
