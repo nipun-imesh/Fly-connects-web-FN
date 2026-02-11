@@ -26,7 +26,7 @@ export default function Footer() {
     },
    {
   name: "TikTok",
-  url: "https://www.tiktok.com/@theflyconnectsx",
+  url: "https://www.tiktok.com/@theflyconnects",
   icon: (
     <svg
       className="w-6 h-6"
