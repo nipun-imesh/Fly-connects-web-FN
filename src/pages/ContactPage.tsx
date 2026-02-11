@@ -182,7 +182,7 @@ export default function ContactPage() {
     {
       icon: "📧",
       title: "Email Us",
-      details: ["Theflyconnects@gmail.com"]
+      details: ["Theflyconnects@gmail.com","theflyconnectsinbound@gmail.com"]
     },
     {
       icon: "🕒",
